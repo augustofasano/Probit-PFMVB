@@ -70,8 +70,8 @@ dimension, specifying the prior variance (in accordance with [Gelman et
 al. (2008)](https://projecteuclid.org/euclid.aoas/1231424214)
 guidelines) and the number of i.i.d samples to generate from the exact
 and approximate posterior densities. We also precompute
-**V****X**<sup>⊺</sup> and
-(**I**<sub>*n*</sub> + *ν*<sup>2</sup>**X****X**<sup>⊺</sup>)<sup> − 1</sup>
+**V** **X**<sup>⊺</sup> and
+(**I**<sub>*n*</sub> + *ν*<sup>2</sup>**X** **X**<sup>⊺</sup>)<sup> − 1</sup>
 to be used in the computation of the predictive probabilities.
 
     p = dim(X)[2] # get number of covariates
