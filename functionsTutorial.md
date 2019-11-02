@@ -19,23 +19,14 @@ them is then analyzed in detail in the following.
 
 -   <tt>getParamsPFM</tt>: returns the **parameters of the optimal PFM
     approximating density** (Algorithm 2);
--   <tt>predictPFM</tt>: returns the **predictive probability of success
-    for a new vector of explanatory variables**, according to the
-    **optimal PFM approximation** (Proposition 2);
 -   <tt>sampleSUN\_PFM</tt>: **samples from the optimal PFM
     approximating density** (Algorithm 3);
 -   <tt>getParamsMF</tt>: returns the **parameters of the optimal MF
     approximating density** (Algorithm 1), [Consonni and
     Marin (2007)](https://www.sciencedirect.com/science/article/pii/S0167947306003951)
     ;
--   <tt>predictMF</tt>: returns the **predictive probability of success
-    for a new vector of explanatory variables**, according to the
-    **optimal MF approximation**;
 -   <tt>rSUNpost</tt>: **samples from the exact posterior distribution**
     ([Durante, 2019](https://arxiv.org/abs/1802.09565));
--   <tt>predictMC</tt>: **returns the predictive probability of success
-    for a new vector of explanatory variables**, computed via
-    **Monte-Carlo integration**.
 
 ### <tt>getParamsPFM</tt>
 
@@ -78,7 +69,7 @@ List containing:
 
 <!-- -->
 
-    getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) { # stopping is determined by change in the ELBO
+    getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) {
       ######################################################
       # PRECOMPUTATION
       ######################################################
@@ -86,28 +77,27 @@ List containing:
       n = dim(X)[1]
       p = dim(X)[2]
       
-      # define prior covariance matrix and its inverse
-      Omega = diag(rep(nu2,p),p,p)
-      invOmega = diag(rep(1/nu2,p),p,p)
-      
-      # compute S = X%*%V%*%t(X) and  directly or with Woodbury
+      # compute H = X%*%V%*%t(X) and Omega_z directly or with Woodbury
       if(p<=n) {
+        # define prior covariance matrix and its inverse
+        Omega = diag(rep(nu2,p),p,p)
+        invOmega = diag(rep(1/nu2,p),p,p)
         V = solve(t(X)%*%X+invOmega)
-        S = X%*%V%*%t(X)
-        invOmZ = diag(1,nrow=n,ncol=n) - S # needed for ELBO
+        H = X%*%V%*%t(X)
+        invOmZ = diag(1,nrow=n,ncol=n) - H # needed for ELBO
       } else{
         XXt = X%*%t(X)
         invOmZ = solve(diag(1,nrow=n,ncol=n)+nu2*XXt) # needed for ELBO
-        S = nu2*XXt%*%invOmZ
+        H = nu2*XXt%*%invOmZ
       }
 
       # compute optimal sigma2
-      h = diag(diag(S))
-      sigma2 = matrix(1/(1-diag(S)), ncol = 1)
+      h = diag(diag(H))
+      sigma2 = matrix(1/(1-diag(H)), ncol = 1)
       sigma = sqrt(sigma2)
       
       # compute matrix to write the CAVI update in a vectorized form
-      A = diag(as.double(sigma2), nrow = n, ncol = n)%*%(S - h)
+      A = diag(as.double(sigma2), nrow = n, ncol = n)%*%(H - h)
       
       # other useful quantities needed for ELBO
       diagInvOmZ = diag(invOmZ)
@@ -127,6 +117,7 @@ List containing:
       
       while(diff > tolerance & nIter < maxIter) {
         elboOld = elbo
+        sumLogPhi = 0
         
         for(i in 1:n) {
           mu[i] = A[i,]%*%meanZ
@@ -136,13 +127,14 @@ List containing:
           phiPhiRatio = dnorm(musiRatio)/pnorm((2*y[i]-1)*musiRatio)
           meanZ[i] = mu[i] + (2*y[i]-1)*sigma[i]*phiPhiRatio
           mean_Z2[i] = mu[i]^2+sigma2[i]+(2*y[i]-1)*mu[i]*sigma[i]*phiPhiRatio # needed for ELBO
+          sumLogPhi = sumLogPhi + log(pnorm((2*y[i]-1)*musiRatio))
         }
         
-        # computation of ELBO (up to an additive constant not depending on z)
+        # computation of ELBO (up to an additive constant not depending on mu)
         elbo = -(t(meanZ)%*%invOmZ%*%meanZ -
                    sum((meanZ^2)*diagInvOmZ) +
-                   sum(mean_Z2*coeffMean_Z2))/2 +
-              t(meanZ/sigma2)%*%mu
+                   sum(mean_Z2*coeffMean_Z2))/2 -
+              sum(meanZ*mu/sigma2) + sum((mu^2)/sigma2)/2 + sumLogPhi
         
         diff = abs(elbo-elboOld)
         nIter = nIter+1
@@ -162,25 +154,23 @@ List containing:
       if(moments == TRUE) {
         # compute V and V%*%t(X), directly or with Woodbury
         if(p<=n) {
-          # V already computed
+          diagV = diag(V) # V already computed
           VXt = V%*%t(X)
         } else{ # use Woodbury
           VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
-          V = Omega - VXt%*%(nu2*X)
+          diagV = nu2*(1-colSums(t(VXt) * X))
         }
         
         musiRatio = mu/sigma
         phiPhiRatio = dnorm(musiRatio)/pnorm((2*y-1)*musiRatio)
         
         meanZ = mu + (2*y-1)*sigma*phiPhiRatio
-        postSdZ = as.double(sqrt(sigma2*(1-(2*y-1)*musiRatio*phiPhiRatio - phiPhiRatio^2)))
+        postVarZ = as.double(sigma2*(1-(2*y-1)*musiRatio*phiPhiRatio - phiPhiRatio^2))
         
-        C = t(t(VXt)*postSdZ) # same as VXt%*%diag(postSdZ) but much faster
-        
-        W = apply(C,1,function(x) sum(x*x))
+        W = apply(VXt,1,function(x) sum(x*x*postVarZ))
         
         meanBeta = VXt%*%meanZ
-        varBeta = diag(V) + W
+        varBeta = diagV + W
         
         moments_PFM = list(meanBeta=meanBeta,varBeta=matrix(varBeta,ncol = 1))
         
@@ -188,61 +178,6 @@ List containing:
       }
       
       return(results)
-    }
-
-### <tt>predictPFM</tt>
-
-This function returns the **approximate predictive probability**
-pr<sub>PFM</sub>(*y*<sub>NEW</sub> = 1 ∣ **y**) = ∫*Φ*(**x**<sub>NEW</sub><sup>⊺</sup>**β**)*q*<sub>PFM</sub><sup>\*</sup>(**β**)*d***β** = 𝔼<sub>*q*<sub>PFM</sub><sup>\*</sup>(**z**)</sub>{*Φ*\[**x**<sub>NEW</sub><sup>⊺</sup> **V** **X**<sup>⊺</sup> **z**(1 + **x**<sub>NEW</sub><sup>⊺</sup> **V** **x**<sub>NEW</sub>)<sup> − 1/2</sup>\]},
-see **Proposition 2** in the paper.
-
-Such a predictive probability is then computed via Monte-Carlo
-integration as
-
-`nSample`<sup> − 1</sup>∑<sub>*r* = 1, …, `nSample`</sub> *Φ*\[**x**<sub>NEW</sub><sup>⊺</sup> **V** **X**<sup>⊺</sup> **z**<sup>(*r*)</sup>(1 + **x**<sub>NEW</sub><sup>⊺</sup> **V** **x**<sub>NEW</sub>)<sup> − 1/2</sup>\],
-
-where **z**<sup>(*r*)</sup> are i.i.d. samples from
-*q*<sub>PFM</sub><sup>\*</sup>(**z**), which are straightforward to
-sample as one only needs to sample from univariate truncated normals,
-thanks to the factorization of *q*<sub>PFM</sub><sup>\*</sup>(**z**).
-
-**Input**:
-
--   <tt>xNew</tt>: *p* × 1 matrix (column vector) of the new
-    observation’s covariates;
--   <tt>paramsPFM</tt>: output of the function <tt>getParamsPFM</tt>;
--   <tt>X</tt>: *n* × *p* matrix of explanatory variables;
--   <tt>y</tt>: binary vector of response variables;
--   <tt>nSample</tt>: number of i.i.d. samples from
-    *q*<sub>PFM</sub><sup>\*</sup>(**z**) to be used for the computation
-    of the approximate predictive probability.
-
-**Output**: approximate predictive probability
-pr<sub>PFM</sub>(*y*<sub>NEW</sub> = 1 ∣ **y**).
-
-**Remark**: in order to properly work, **this function needs the
-matrix**
-**V** = (*ν*<sup> − 2</sup>**I**<sub>*p*</sub> + **X**<sup>⊺</sup>**X**)<sup> − 1</sup>
-**to be already computed** and stored in the global environment. Since
-it is a *p* × *p* matrix, recomputing it for each new observation or
-even passing it as a function parameter could be very inefficient.
-Computation of *V* can be performed efficiently exploiting **Woodbury’s
-identity**.
-
-    predictPFM = function(xNew,paramsPFM,X,y,nSample) {
-      # we take xNew as a COLUMN vector
-      # get number of observations and useful quantities for sampling
-      n = dim(X)[1]
-      signY = 2*y-1
-      muTN = signY*paramsPFM$mu # generate all the truncated as left truncated, with support (0,Inf)
-      
-      # sample the truncated normals
-      sampleTruncNorm = matrix(rtruncnorm(n*nSample, a = 0, b = Inf, mean = muTN, sd = sqrt(paramsPFM$sigma2)), nrow = n, ncol = nSample, byrow = F ) # rtruncnorm(10, a = 0, b = Inf, mean = c(-5,5), sd = c(1,1))  to understand the function
-      sampleTruncNorm = apply(sampleTruncNorm,2, function(x) x*signY) # need to adjust the sign of the variables for which y_i is 0
-      
-      # obtain predictive probability Monte-Carlo estimate
-      sd = as.double(sqrt(1+t(xNew)%*%V%*%xNew))
-      predProb = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))
     }
 
 ### <tt>sampleSUN\_PFM</tt>
@@ -270,7 +205,7 @@ some slight tuning modifications.
 **Output**: *p* × `nSample` matrix, where each column is a sample from
 *q*<sub>PFM</sub><sup>\*</sup>(**β**).
 
-    sampleSUN_PFM = function(paramsPFM, X, y, nu2, nSample = 1e4) {
+    sampleSUN_PFM = function(paramsPFM, X, y, nu2, nSample) {
       # get model dimensions
       n = dim(X)[1]
       p = dim(X)[2]
@@ -293,7 +228,7 @@ some slight tuning modifications.
       
       # sample the truncated normal component
       sampleTruncNorm = matrix(rtruncnorm(n*nSample, a = 0, b = Inf, mean = muTN, sd = sqrt(paramsPFM$sigma2)), nrow = n, ncol = nSample, byrow = F ) # rtruncnorm(10, a = 0, b = Inf, mean = c(-5,5), sd = c(1,1))  to understand the function
-      sampleTruncNormm[y==0,] = -sampleTruncNormm[y==0,] # need to adjust the sign of the variables for which y_i is 0
+      sampleTruncNorm[y==0,] = -sampleTruncNorm[y==0,] # need to adjust the sign of the variables for which y_i is 0
       
       # linearly trasform the truncated normal samples
       B = VXt%*%sampleTruncNorm
@@ -309,8 +244,8 @@ some slight tuning modifications.
 ### <tt>getParamsMF</tt>
 
 This function implements **Algorithm 1** computing the parameters
-**β**<sup>\*</sup> and **V** of the optimal MF approximating
-distribution of **β**, i.e.
+**β**<sup>\*</sup> and the diagonal elements of **V** for the optimal MF
+approximating distribution of **β**, i.e.
 *q*<sub>MF</sub><sup>\*</sup>(**β**) = *ϕ*(**β** − **β**<sup>\*</sup>; **V**).
 
 **Input**:
@@ -331,8 +266,9 @@ List containing:
 
 -   <tt>meanBeta</tt>: optimal mean parameter **β**<sup>\*</sup> for the
     mean-field gaussian approximation;
--   <tt>V</tt>: optimal covariance matrix **V** for the mean-field
-    Gaussian approximation;
+-   <tt>diagV</tt>: optimal marginal posterior variances for the
+    mean-field Gaussian approximation, i.e. the diagonal elements of the
+    matrix **V**;
 -   <tt>nIter</tt>: number of iteration before the algorithm stopped,
     either because it converged or because the maximum number of
     iterations <tt>maxIter</tt> was reached;
@@ -347,27 +283,30 @@ List containing:
       n = dim(X)[1]
       p = dim(X)[2]
       
-      # define prior covariance matrix and its inverse
-      Omega = diag(rep(nu2,p),p,p)
-      invOmega = diag(rep(1/nu2,p),p,p)
-      
-      # compute V (optimal covariance matrix for beta) directly or with Woodbury
+      # compute V and other useful quantities
       if(p<=n) {
+        Omega = diag(rep(nu2,p),p,p)
+        invOmega = diag(rep(1/nu2,p),p,p)
         V = solve(t(X)%*%X+invOmega)
+        diagV =diag(V)
         VXt = V%*%t(X)
+        H = X%*%V%*%t(X) # needed for ELBO
       } else{
         VXt = t(nu2*X)%*%solve(diag(1, nrow = n, ncol = n)+(nu2*X)%*%t(X))
-        V = Omega - VXt%*%(nu2*X)
+        # V = Omega - VXt%*%(nu2*X)
+        diagV = nu2*(1-colSums(t(VXt) * X))
+        XXt = X%*%t(X)
+        H = nu2*XXt%*%solve(diag(1,nrow=n,ncol=n)+nu2*XXt) # needed for ELBO
       }
-      V = 0.5*(V+t(V))
-      
-      # other useful quantities needed for ELBO
-      signX = X
-      signX[y==0,] = -X[y==0,]
+
+      # other useful quantites
+      XVVXt = t(VXt)%*%VXt # needed for ELBO
+      signH = H
+      signH[y==0,] = -H[y==0,]
       
       # initialization of variables
       meanZ = matrix(0,n,1)
-      meanBeta = matrix(0,p,1)
+      lambda = matrix(0,n,1) #X%*%meanBeta
       diff = 1
       elbo = -1
       nIter=0
@@ -375,52 +314,26 @@ List containing:
       ######################################################
       # CAVI ALGORITHM
       ######################################################
-      
+
       while(diff > tolerance & nIter < maxIter) {
         elboOld = elbo
-        meanZOld = meanZ
-        meanBetaOld = meanBeta
-        for(i in 1:n) {
-          mu = X[i,]%*%meanBeta
-          if(y[i]>0) {
-            meanZ[i,] = mu + dnorm(mu)/pnorm(mu)
-          } else {
-            meanZ[i,] = mu - dnorm(mu)/(1-pnorm(mu))
-          }
-        }
         
-        meanBeta = VXt%*%meanZ
+        # update parameters
+        mu = H%*%meanZ
+        meanZ = mu +(2*y-1)*dnorm(mu)/pnorm((2*y-1)*mu)
         
         # compute ELBO
-        elbo = sum(meanBeta^2)/nu2 + sum(log(pnorm(signX%*%meanBeta)))
+        elbo = (t(meanZ)%*%XVVXt%*%meanZ)/nu2 + sum(log(pnorm(signH%*%meanZ)))
         
         # compute change in ELBO
         diff = abs(elbo-elboOld)
-
+        
         nIter = nIter+1
         if(nIter %% 100 == 0) {print(paste0("iter: ", nIter, ", ELBO: ", elbo))}
       }
-      return(list(meanBeta = meanBeta, V = V, nIter = nIter))
-    }
-
-### <tt>predictMF</tt>
-
-This function returns the **predictive probability of success for a new
-vector of explanatory variables, according to the optimal MF
-approximation**, i.e. it outputs
-pr<sub>MF</sub>(*y*<sub>NEW</sub> = 1 ∣ **y**) = *Φ*\[**x**<sub>NEW</sub><sup>⊺</sup>(1 + **x**<sub>NEW</sub>**V** **x**<sub>NEW</sub>)<sup> − 1/2</sup>\].
-
-**Input**:
-
--   <tt>xNew</tt>: *p* × 1 matrix (column vector) of the new
-    observation’s covariates;
--   <tt>paramsMF</tt>: output of the function <tt>getParamsMF</tt>.
-
-**Output**: mean-field predictive probability
-pr<sub>MF</sub>(*y*<sub>NEW</sub> = 1 ∣ **y**).
-
-    predictMF = function(xNew,paramsMF){
-      pnorm(t(xNew)%*%paramsMF$meanBeta/as.double(sqrt(1+t(xNew)%*%paramsMF$V%*%xNew)))
+      meanBeta = VXt%*%meanZ
+      
+      return(list(meanBeta = meanBeta, diagV = diagV, nIter = nIter))
     }
 
 ### <tt>rSUNpost</tt>
@@ -451,26 +364,22 @@ prior for **β** having the form
       # get parameters useful for sampling
       Omega = diag(rep(nu2,p),p,p)
       invOmega = diag(rep(1/nu2,p),p,p)
-      nu = sqrt(nu2)
-      
-      D = X
-      D[y==0,] = -X[y==0,]
-      Gamma_post_unnormalized = (nu2*D)%*%t(D)+diag(1,n,n)
+
+      signX = X
+      signX[y==0,] = -X[y==0,]
+      Gamma_post_unnormalized = diag(1,n,n)+(nu2*signX)%*%t(signX)
       inv_Gamma_post_unnormalized = solve(Gamma_post_unnormalized)
       s = diag(sqrt(Gamma_post_unnormalized[cbind(1:n,1:n)]),n,n)
       s_1 = diag(1/s[cbind(1:n,1:n)],n,n)
       gamma_post = matrix(0,n,1) # because prior mean is set to 0
       Gamma_post = s_1%*%Gamma_post_unnormalized%*%s_1
       
-      Var_V0 = diag(1,p,p)-t(nu*D)%*%inv_Gamma_post_unnormalized%*%(D*nu)
-      Var_V0 = 0.5*(Var_V0+t(Var_V0))
-      L = t(chol(Var_V0))
-      
-      # compute multiplicative coefficients for the multivariate normal component
-      coefMultNorm = nu*L
+      V = Omega-t(nu2*signX)%*%inv_Gamma_post_unnormalized%*%(signX*nu2)
+      V = 0.5*(V+t(V))
+      L = t(chol(V))
       
       # compute multiplicative coefficients for the truncated multivariate normal component
-      coefTruncNorm = t(nu2*D)%*%inv_Gamma_post_unnormalized%*%s
+      coefTruncNorm = t(nu2*signX)%*%inv_Gamma_post_unnormalized%*%s
       
       # sample the multivariate normal component
       sampleMultNorm = matrix(rnorm(nSample*p),p,nSample)
@@ -483,31 +392,5 @@ prior for **β** having the form
       }
       
       # combine the multivariate normal and truncated normal components
-      sampleSUN = coefMultNorm%*%sampleMultNorm+coefTruncNorm%*%sampleTruncNorm
-    }
-
-### <tt>predictMC</tt>
-
-This function returns the **predictive probability of success for a new
-vector of explanatory variables** **x**<sub>NEW</sub>.
-pr(*y*<sub>NEW</sub> = 1 ∣ **y**) = ∫*Φ*(**x**<sub>NEW</sub><sup>⊺</sup>**β**)*p*(**β** ∣ **y**)*d***β**,
-computed via Monte-Carlo integration as
-
-`nSample`<sup> − 1</sup>∑<sub>*r* = 1, …, `nSample`</sub> *Φ*(**x**<sub>NEW</sub><sup>⊺</sup>**β**<sup>(*r*)</sup>)
-
-using the i.i.d. samples
-**β**<sup>(1)</sup>, …, **β**<sup>`(nSample)`</sup> from the posterior
-distribution *p*(**β** ∣ **y**) obtained with the function
-<tt>rSUNpost</tt>.
-
-**Input**:
-
--   <tt>xNew</tt>: *p* × 1 matrix (column vector) of the new
-    observation’s covariates;
--   <tt>betaSUN</tt>: output of the function <tt>rSUNpost</tt>.
-
-**Output**: predictive probability pr(*y*<sub>NEW</sub> = 1 ∣ **y**).
-
-    predictMC = function(xNew,betaSUN) {
-      PredProb = mean(pnorm(t(xNew)%*%betaSUN))
+      sampleSUN = L%*%sampleMultNorm+coefTruncNorm%*%sampleTruncNorm
     }

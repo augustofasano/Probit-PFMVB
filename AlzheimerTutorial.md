@@ -69,135 +69,153 @@ Finally, we conclude the preliminary part by getting the model
 dimension, specifying the prior variance (in accordance with [Gelman et
 al. (2008)](https://projecteuclid.org/euclid.aoas/1231424214)
 guidelines) and the number of i.i.d samples to generate from the exact
-and approximate posterior densities.
+and approximate posterior densities. We also precompute
+**V****X**<sup>⊺</sup> and
+(**I**<sub>*n*</sub> + *ν*<sup>2</sup>**X****X**<sup>⊺</sup>)<sup> − 1</sup>
+to be used in the computation of the predictive probabilities.
 
     p = dim(X)[2] # get number of covariates
     nu2 = 25 # prior variance
     nSample = 2e4 #fix number of samples
 
-Exact posterior sampling
-========================
-
-After the preliminary operations above have been executed,
-**i.i.d. samples from the unified skew-normal posterior** ([Durante,
-2019](https://arxiv.org/abs/1802.09565)) can be obtained by simply using
-the function <tt>rSUNpost</tt>. In addition, note we also keep track of
-the **running time**.
-
-    startTimeSUN = Sys.time()
-    betaSUN = rSUNpost(X=X,y=y,nu2=nu2,nSample=nSample)
-    endTimeSUN = Sys.time()
-    timeSUN = difftime(endTimeSUN, startTimeSUN, units=("mins"))[[1]]
+    # precompute some useful quantities to be used for the predictive probabilities
+    VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
+    invIXXt = solve(diag(1,nrow=n,ncol=n)+nu2*(X%*%t(X)))
 
 Partially-factorized mean-field variational Bayes
 =================================================
 
-This Section contains the code for the following two tasks:
+At this point, we can **get the optimal parameters of**
+*q*<sub>PFM</sub><sup>\*</sup>(**z**) as in **Algorithm 2**, with the
+function <tt>getParamsPFM</tt>. Then, the optimal joint <span
+class="smallcaps">PFM-VB</span> approximating density immediately
+follows from the equality
+*q*<sub>PFM</sub><sup>\*</sup>(**β**, **z**) = *p*(**β** ∣ **z**)*q*<sub>PFM</sub><sup>\*</sup>(**z**).
 
--   **get the optimal parameters of**
-    *q*<sub>PFM</sub><sup>\*</sup>(**z**) as in **Algorithm 2**, with
-    the function <tt>getParamsPFM</tt>. Then, the optimal joint <span
-    class="smallcaps">PFM-VB</span> approximating density immediately
-    follows from the equality
-    *q*<sub>PFM</sub><sup>\*</sup>(**β**, **z**) = *p*(**β** ∣ **z**)*q*<sub>PFM</sub><sup>\*</sup>(**z**);
+The function also outputs the posterior means and marginal variances of
+**β**. Moreover, we also compute the **approximate predictive
+probabilities** for the 33 observations in the test set,
+i.e. pr<sub>PFM</sub>(*y*<sub>NEW</sub> = 1 ∣ **y**) = ∫*Φ*(**x**<sub>NEW</sub><sup>⊺</sup>**β**)*q*<sub>PFM</sub><sup>\*</sup>(**β**)*d***β** = 𝔼<sub>*q*<sub>PFM</sub><sup>\*</sup>(**z**)</sub>{*Φ*\[**x**<sub>NEW</sub><sup>⊺</sup> **V** **X**<sup>⊺</sup> **z**(1 + **x**<sub>NEW</sub><sup>⊺</sup> **V** **x**<sub>NEW</sub>)<sup> − 1/2</sup>\]},
+see **Proposition 2** in the paper.
 
--   **sample from the optimal approximating posterior distribution** for
-    **β**, *q*<sub>PFM</sub><sup>\*</sup>(**β**): this is performed
-    through the function <tt>sampleSUN\_PFM</tt>.
+Such predictive probabilities are computed via Monte-Carlo integration
+as
 
-Again, the **running time** is also monitored.
+`nSampleZ`<sup> − 1</sup>∑<sub>*r* = 1, …, `nSampleZ`</sub> *Φ*\[**x**<sub>NEW</sub><sup>⊺</sup> **V** **X**<sup>⊺</sup> **z**<sup>(*r*)</sup>(1 + **x**<sub>NEW</sub><sup>⊺</sup> **V** **x**<sub>NEW</sub>)<sup> − 1/2</sup>\],
+
+where **z**<sup>(*r*)</sup> are i.i.d. samples from
+*q*<sub>PFM</sub><sup>\*</sup>(**z**), which are straightforward to
+sample as one only needs to sample from univariate truncated normals,
+thanks to the factorization of *q*<sub>PFM</sub><sup>\*</sup>(**z**).
+
+For comparison purspose, we keep track of the **running time** for the
+algorithm to converge and return the marginal moments, and the running
+time to compute the predictive probabilities.
 
     tolerance = 1e-3 # tolerance to establish ELBO convergence
 
     # get optimal parameters and moments
-    startTimeSUN_PFM = Sys.time()
+    startTime = Sys.time()
     paramsPFM = getParamsPFM(X=X,y=y,nu2=nu2,moments=TRUE,tolerance=tolerance,maxIter=1e4)
-    endTimeSUN_PFM = Sys.time()
-    timeSUN_PFM = difftime(endTimeSUN_PFM, startTimeSUN_PFM, units=("secs"))[[1]]
+    timeSUN_PFM_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 
-    # sample from approximate posterior
-    set.seed(seed+2)
-    betaSUN_PFM = sampleSUN_PFM(paramsPFM=paramsPFM,X=X,y=y,nu2=nu2,nSample=nSample)
+    # get the predictive probabilities
+    startTime = Sys.time()
+    nSampleZ = 5e3
+    muTN = paramsPFM$mu
+    muTN[y==0] = -muTN[y==0]
+    sampleTruncNorm = matrix(rtruncnorm(n*nSampleZ, a = 0, b = Inf, mean = muTN, sd = sqrt(paramsPFM$sigma2)), nrow = n, ncol = nSampleZ, byrow = F )
+    sampleTruncNorm[y==0,] = -sampleTruncNorm[y==0,] # need to adjust the sign of the variables for which y_i is 0
+
+    predPFM = double(length = length(yTest))
+    for(i in 1:length(yTest)){
+      xNew = matrix(X_Test[i,],ncol = 1)
+      Xx = X%*%xNew
+      sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
+      
+      predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))
+    }
+    timeSUN_PFM_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 
 Mean-field variational Bayes
 ============================
 
-This Section contains the code for the following two tasks:
+This Section contains the code to **get the optimal parameters of**
+*q*<sub>MF</sub><sup>\*</sup>(**β**) as in **Algorithm 1**, using the
+function <tt>getParamsMF</tt>.
 
--   **get the optimal parameters of**
-    *q*<sub>MF</sub><sup>\*</sup>(**β**) as in **Algorithm 1**, with the
-    function <tt>getParamsMF</tt>;
+Again, after the algorithm has converged, we compute the **predictive
+probabilities for the observations in the test set, according to the
+optimal MF approximation**, i.e.
+pr<sub>MF</sub>(*y*<sub>NEW</sub> = 1 ∣ **y**) = *Φ*\[**x**<sub>NEW</sub><sup>⊺</sup>(1 + **x**<sub>NEW</sub>**V** **x**<sub>NEW</sub>)<sup> − 1/2</sup>\].
 
--   **sample from the optimal approximating posterior distribution** for
-    **β**, *q*<sub>MF</sub><sup>\*</sup>(**β**): since this is a
-    multivariate normal distribution, this is performed in a standard
-    way, by exploiting the Choleski decomposition of the optimal
-    covariance matrix **V**.
+As above, the **running times** of the algorithms and the inference part
+are monitored.
 
-As usual, the **running time** is also monitored.
-
-    startTimeMF = Sys.time()
+    # get optimal parameters and moments
+    startTime = Sys.time()
     paramsMF = getParamsMF(X,y,nu2,tolerance,maxIter = 1e4)
-    endTimeMF = Sys.time()
-    timeMF = difftime(endTimeMF, startTimeMF, units=("secs"))[[1]]
+    timeMF_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 
-    # sample from approximate posterior
-    set.seed(seed+3)
-    L = t(chol(paramsMF$V))
-    betaMF = L%*%matrix(rnorm(nSample*p),p,nSample)
-    betaMF = apply(betaMF,2, function(x) paramsMF$meanBeta+x)
+    # get the predictive probabilities
+    startTime = Sys.time()
+    predMF = double(length = length(yTest))
+    for(i in 1:length(yTest)){
+      xNew = matrix(X_Test[i,],ncol = 1)
+      Xx = X%*%xNew
+      sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
+      
+      predMF[i] = as.double(pnorm(t(xNew)%*%paramsMF$meanBeta/sd))
+    }
+    timeMF_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+
+Exact posterior sampling
+========================
+
+In order to have a benchmark to compare the two approximate methods
+with, **i.i.d. samples from the unified skew-normal posterior**
+([Durante, 2019](https://arxiv.org/abs/1802.09565)) can be obtained by
+simply using the function <tt>rSUNpost</tt>. As usual, the **running
+time** is also monitored, both for the computation of the posterior and
+for the inferential part.
+
+    # obtain a sample from the posterior distribution
+    startTime = Sys.time()
+    betaSUN = rSUNpost(X=X,y=y,nu2=nu2,nSample=nSample)
+    timeSUN_algo = difftime(Sys.time(), startTime, units=("mins"))[[1]]
+
+    # get the predictive probabilities
+    startTime = Sys.time()
+    predSUN = double(length = length(yTest))
+    for(i in 1:length(yTest)){
+      xNew = matrix(X_Test[i,],ncol = 1)
+      
+      predSUN[i] = mean(pnorm(t(xNew)%*%betaSUN))
+    }
+    timeSUN_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 
 Running times and number of iterations
 ======================================
 
 At this point, we can **check the running times** for the three methods
-and **number of iterations** of each approximate method with the
-following simple code.
+and **number of iterations** of each approximate method.
 
 **Remark**: depending on the machine you use, the running times can
 slightly differ from the ones reported in the paper, but they should not
 significantly deviate from them. On the contrary, the number of
 iterations for the two methods should match the reported ones, i.e. 212
-for <span class="smallcaps">MF-VB</span> and 14 for <span
+for <span class="smallcaps">MF-VB</span> and 7 for <span
 class="smallcaps">PFM-VB</span>
 
-    timeSUN
-    timeMF
-    timeSUN_PFM
+    timeSUN_algo # in minutes
+    timeSUN_inference # in seconds
+    timeSUN_PFM_algo # in seconds
+    timeSUN_PFM_inference # in seconds
+    timeMF_algo # in seconds
+    timeMF_inference # in seconds
 
-    paramsMF$nIter
     paramsPFM$nIter
-
-Predictive probabilities
-========================
-
-In this section we report the code to compute the **predictive
-probabilities** according to the exact unified skew-normal, the <span
-class="smallcaps">PFM-VB</span> and the <span
-class="smallcaps">MF-VB</span> posterior distributions. See Section 2 of
-the paper for further details about how these probabilities can be
-computed and the <tt>functionsTutorial.html</tt> for their
-implementation.
-
-    # Compute V and VXt outside, using Woodbury's identity
-    Omega = diag(rep(nu2,p),p,p)
-    invOmega = diag(rep(1/nu2,p),p,p)
-    VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
-    V = Omega - VXt%*%(nu2*X)
-
-    nTest = length(yTest)
-    predProb = matrix(nrow = nTest, ncol = 3)
-    colnames(predProb) = c("SUN", "MF", "PFM")
-    for(i in 1:nTest){
-      xNew = matrix(X_Test[i,],ncol = 1)
-      predProb[i,] = c(predictMC(xNew,betaSUN),
-                       predictMF(xNew,paramsMF),
-                       predictPFM(xNew,paramsPFM,X,y,1e4))
-    }
-
-    predProb = cbind(predProb, y=yTest)
-
-    save(predProb, file="predProb.RData")
+    paramsMF$nIter
 
 Summaries of the results
 ========================
@@ -206,18 +224,45 @@ In this Section, we compute the different **summary quantities** of our
 results which have been used to produce the figures in Section 3 of the
 paper.
 
+Predictive probabilities
+------------------------
+
+We start by saving the **predictive probabilities** previously computed.
+
+    predProb = cbind(predSUN,predMF,predPFM,yTest)
+    colnames(predProb) = c("SUN", "MF", "PFM", "y")
+
+    save(predProb, file="predProb.RData")
+
 Wasserstein distances
 ---------------------
 
-We start by computing the **Wasserstein distances** among the *p* = 9036
+Now, we compute the **Wasserstein distances** among the *p* = 9036
 posterior empirical marginal distributions induced by the 20000
 i.i.d. samples from the exact posterior and the associated ones obtained
-with the 20000 i.i.d. samples under <span class="smallcaps">MF-VB</span>
-and <span class="smallcaps">PFM-VB</span> approximations.
+with 20000 i.i.d. samples under the two approximate methods.
 
-We compute such quantities with the function <tt>wasserstein1d</tt>
-available in the <tt>transport</tt> package, which has been loaded at
-the beginning.
+Sampling from the optimal <span class="smallcaps">PFM-VB</span>
+approximating density is performed through the function
+<tt>sampleSUN\_PFM</tt>, while samples from the optimal <span
+class="smallcaps">MF-VB</span> approximating posterior distribution are
+computed in a standard way, by exploiting the Choleski decomposition of
+the optimal covariance matrix **V**.
+
+We compute the Wasserstein distances with the function
+<tt>wasserstein1d</tt> available in the <tt>transport</tt> package,
+which has been loaded at the beginning.
+
+    # sample from approximate PFM posterior
+    set.seed(seed+2)
+    betaSUN_PFM = sampleSUN_PFM(paramsPFM=paramsPFM,X=X,y=y,nu2=nu2,nSample=nSample)
+
+    # sample from approximate MF posterior
+    set.seed(seed+3)
+    V = diag(rep(nu2,p),p,p) - t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))%*%(nu2*X)
+    L = t(chol(V))
+    betaMF = L%*%matrix(rnorm(nSample*p),p,nSample)
+    betaMF = apply(betaMF,2, function(x) paramsMF$meanBeta+x)
 
     wassMF = double(length = p)
     for(i in 1:p) {
@@ -268,7 +313,7 @@ is due to Monte-Carlo error**.
 
 All the Wasserstein distances are then saved.
 
-    rm(list=c("betaSUN_PFM","betaMF")) # free memory
+    rm(list=c("betaSUN_PFM","betaMF"))
     set.seed(seed+100)
     betaSUNcomparison = rSUNpost(X,y,nu2,nSample = nSample)
 
@@ -296,7 +341,7 @@ variables.
     meanSUN = apply(betaSUN,1,mean)
     varSUN = apply(betaSUN,1,var)
     moments = cbind(meanSUN=meanSUN,varSUN=varSUN,
-                    meanMF=paramsMF$mean,varMF=diag(paramsMF$V),
+                    meanMF=paramsMF$mean,varMF=paramsMF$diagV,
                     meanPFM=paramsPFM$postMoments.meanBeta,varPFM=paramsPFM$postMoments.varBeta)
     save(moments, file = "moments.RData")
 
@@ -335,8 +380,7 @@ The following code reproduces Figure 1.
 
     ggsave("F1.png",width=7,height=3)
 
-![](https://raw.githubusercontent.com/augustofasano/Probit-PFMVB/master/img/F1.png)
-
+<!-- ![](https://raw.githubusercontent.com/augustofasano/Probit-PFMVB/master/img/F1.png) -->
 Figure 2: density comparison in the best and worst scenarios of each approximate method
 ---------------------------------------------------------------------------------------
 
@@ -371,12 +415,11 @@ The following code reproduces Figure 2.
     dataDensity = rbind(bestMF,worstMF,bestPMF,worstPMF)
     dataDensity$X2 = factor(dataDensity$X2,levels=c("SUN","MF","PFM"))
     F2 = ggplot(dataDensity, aes(x=value,fill=X2,color=X2,linetype=X2))+
-      geom_density(alpha=0.1)+facet_grid(group2~group1)+ theme_bw()+scale_fill_manual(values=c("#000000","#FFFFFF","#FFFFFF"))+scale_color_manual(values=c("#D9D9D9","#000000","#000000"))+scale_linetype_manual(values=c("solid","dotted","longdash"))+labs(x="", y = "")+theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),plot.margin = margin(0.1, 0.1, -0.15, -0.3, "cm"),legend.position = "none")+xlim(-29,29)
+      geom_density(alpha=0.1)+facet_grid(group2~group1)+ theme_bw()+scale_fill_manual(values=c("#000000","#FFFFFF","#FFFFFF"))+scale_color_manual(values=c("#D9D9D9","#000000","#000000"))+scale_linetype_manual(values=c("solid","dotted","longdash"))+labs(x="", y = "")+theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),plot.margin = margin(0.1, 0.1, -0.15, -0.3, "cm"),legend.position = "none")+xlim(-30,30)
 
     ggsave("F2.png",width=7,height=4)
 
-![](https://raw.githubusercontent.com/augustofasano/Probit-PFMVB/master/img/F2.png)
-
+<!-- //![](https://raw.githubusercontent.com/augustofasano/Probit-PFMVB/master/img/F2.png) -->
 Figure 3: comparison of moments and predictive probabilities
 ------------------------------------------------------------
 
@@ -411,4 +454,4 @@ The following code reproduces Figure 3.
 
     ggsave("F3.png",width=8,height=3)
 
-![](https://raw.githubusercontent.com/augustofasano/Probit-PFMVB/master/img/F3.png)
+<!-- //![](https://raw.githubusercontent.com/augustofasano/Probit-PFMVB/master/img/F3.png) -->
