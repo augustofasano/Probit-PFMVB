@@ -67,8 +67,7 @@ List containing:
     and marginal posterior variances (<tt>postMoments.varBeta</tt>) of
     **β**.
 
-<!-- -->
-
+``` r
     getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) {
       ######################################################
       # PRECOMPUTATION
@@ -179,6 +178,7 @@ List containing:
       
       return(results)
     }
+```
 
 ### <tt>sampleSUN\_PFM</tt>
 
