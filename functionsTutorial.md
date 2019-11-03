@@ -1,32 +1,17 @@
+
 Introduction
 ============
-
-As described in the <tt>README.md</tt> file, this tutorial explains
-**how to use the functions implementing the methods presented in Section
-2 in the paper**, reporting also the **code in full detail**. Applying
-such functions to the Alzheimer dataset contained in the file
-<tt>Alzheimer.RData</tt> gives the results presented in Section 3: this
-is explained in detail in the tutorial <tt>Alzheimer.html</tt>. If you
-want to source directly all the functions, you can download and source
-the file <tt>functionsVariational.R</tt>, which contains all the
-<tt>R</tt> code reported in this tutorial in one unique file.
+As described in the [`README.md`](https://github.com/augustofasano/Probit-PFMVB/blob/master/README.md) file, this tutorial provides details on the **functions required to implement the methods presented in Section 2 of the paper**. The `R` source file can be found in [`functionsVariational.R`](https://github.com/augustofasano/Probit-PFMVB/blob/master/functionsVariational.R).
 
 Implemented functions
 ---------------------
+The **list of implemented functions** is reported below. Each of them is then analyzed in detail in the following.
 
-The **summary list of implemented functions** is reported below. Each of
-them is then analyzed in detail in the following.
-
--   <tt>getParamsPFM</tt>: returns the **parameters of the optimal PFM
-    approximating density** (Algorithm 2);
--   <tt>sampleSUN\_PFM</tt>: **samples from the optimal PFM
-    approximating density** (Algorithm 3);
--   <tt>getParamsMF</tt>: returns the **parameters of the optimal MF
-    approximating density** (Algorithm 1), [Consonni and
-    Marin (2007)](https://www.sciencedirect.com/science/article/pii/S0167947306003951)
-    ;
--   <tt>rSUNpost</tt>: **samples from the exact posterior distribution**
-    ([Durante, 2019](https://arxiv.org/abs/1802.09565));
+-   `getParamsPFM`: returns the parameters of the optimal PFM approximation (**Algorithm 2** in the paper);
+-   `sampleSUN\_PFM`: samples from the optimal PFM approximating density (**Algorithm 3** in the paper);
+-   `getParamsMF`: returns the parameters of the optimal MF approximation (**Algorithm 1** in the paper), [Consonni and
+    Marin (2007)](https://www.sciencedirect.com/science/article/pii/S0167947306003951);
+-   `rSUNpost`: **samples from the exact SUN posterior distribution** ([Durante, 2019](https://arxiv.org/abs/1802.09565));
 
 ### <tt>getParamsPFM</tt>
 
