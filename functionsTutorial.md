@@ -14,7 +14,7 @@ The **list of implemented functions** is reported below. Each of them is then an
 
 ### `getParamsPFM`
 
-This function implements the **CAVI** to obtain the optimal PFM approximating density. See **Algorithm 2** in the paper for details.
+This function implements the **CAVI** to obtain the optimal PFM approximating density. See **Algorithm 2** in the paper.
 
 **Input**:
 
@@ -25,9 +25,7 @@ This function implements the **CAVI** to obtain the optimal PFM approximating de
 -   `tolerance`: absolute change in the ELBO\[*q*<sub>PFM</sub>(**z**)\] used to establish convergence;
 -   `maxIter`: maximum number of allowed iterations before stopping.
 
-**Output**:
-
-List containing:
+**Output**: A list containing
 
 -   `mu`: optimal value **μ**<sup>\*</sup>;
 -   `sigma2`: optimal value **σ**<sup> \* 2</sup>;
