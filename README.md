@@ -1,5 +1,4 @@
 # Asymptotically Exact Variational Bayes for High-Dimensional Binary Regression Models
-=========================================================================
 
 This repository is associated with the article [Fasano, Durante and Zanella (2019). *Asymptotically Exact Variational Bayes for High-Dimensional Binary Regression Models*]. The **key contribution of this paper is outlined below**.
 
