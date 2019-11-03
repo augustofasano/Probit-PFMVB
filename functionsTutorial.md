@@ -8,49 +8,31 @@ Implemented functions
 The **list of implemented functions** is reported below. Each of them is then analyzed in detail in the following.
 
 -   `getParamsPFM`: returns the parameters of the optimal PFM approximation (**Algorithm 2** in the paper);
--   `sampleSUN\_PFM`: samples from the optimal PFM approximating density (**Algorithm 3** in the paper);
--   `getParamsMF`: returns the parameters of the optimal MF approximation (**Algorithm 1** in the paper), [Consonni and
-    Marin (2007)](https://www.sciencedirect.com/science/article/pii/S0167947306003951);
+-   `sampleSUN_PFM`: samples from the optimal PFM approximating density (**Algorithm 3** in the paper);
+-   `getParamsMF`: returns the parameters of the optimal MF approximation (**Algorithm 1** in the paper);
 -   `rSUNpost`: **samples from the exact SUN posterior distribution** ([Durante, 2019](https://arxiv.org/abs/1802.09565));
 
-### <tt>getParamsPFM</tt>
+### `getParamsPFM`
 
-This function implements **Algorithm 2** computing the parameters
-**μ**<sup>\*</sup> and **σ**<sup> \* 2</sup> of the optimal PFM
-approximating distribution of **z**,
-*q*<sub>PFM</sub><sup>\*</sup>(**z**) = ∏<sub>*i* = 1, …, *n*</sub> *q*<sub>PFM</sub><sup>\*</sup>(*z*<sub>*i*</sub>),
-with
-*q*<sub>PFM</sub><sup>\*</sup>(*z*<sub>*i*</sub>) = *ϕ*(*z*<sub>*i*</sub> − *μ*<sub>*i*</sub><sup>\*</sup>; *σ*<sub>*i*</sub><sup> \* 2</sup>)**1**\[(2*y*<sub>*i*</sub> − 1)*z*<sub>*i*</sub> &gt; 0\]
-reported in Theorem 2. Once they are available, the optimal
-approximating joint posterior distribution for (**β**, **z**) is simply
-*q*<sub>PFM</sub><sup>\*</sup>(**β**, **z**) = *p*(**β** ∣ **z**) ⋅ *q*<sub>PFM</sub><sup>\*</sup>(**z**).
+This function implements the **CAVI** to obtain the optimal PFM approximating density. See **Algorithm 2** in the paper for details.
 
 **Input**:
 
--   <tt>X</tt>: *n* × *p* matrix of explanatory variables;
--   <tt>y</tt>: binary vector of response variables;
--   <tt>nu2</tt>: prior variance for *β*<sub>*i*</sub>’s coefficients
-    (*ν*<sup>2</sup> in the paper);
--   <tt>moments</tt>: logical, do you want to obtain marginal moments in
-    the output?
--   <tt>tolerance</tt>: absolute change in the
-    ELBO\[*q*<sub>PFM</sub>(**z**)\] used to establish convergence;
--   <tt>maxIter</tt>: maximum number of allowed iterations before
-    stopping.
+-   `X`: *n* × *p* matrix of explanatory variables;
+-   `y`: binary vector of response variables;
+-   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper);
+-   `moments`: logical, do you want to obtain marginal moments in the output?
+-   `tolerance`: absolute change in the ELBO\[*q*<sub>PFM</sub>(**z**)\] used to establish convergence;
+-   `maxIter`: maximum number of allowed iterations before stopping.
 
 **Output**:
 
 List containing:
 
--   <tt>mu</tt>: optimal value **μ**<sup>\*</sup>;
--   <tt>sigma2</tt>: optimal value **σ**<sup> \* 2</sup>;
--   <tt>nIter</tt>: number of iteration before the algorithm stopped,
-    either because it converged or because the maximum number of
-    iterations <tt>maxIter</tt> was reached;
--   (optional, if <tt>moments</tt> is set to TRUE) <tt>postMoments</tt>:
-    list containing the posterior mean (<tt>postMoments.meanBeta</tt>)
-    and marginal posterior variances (<tt>postMoments.varBeta</tt>) of
-    **β**.
+-   `mu`: optimal value **μ**<sup>\*</sup>;
+-   `sigma2`: optimal value **σ**<sup> \* 2</sup>;
+-   `nIter`: number of iteration before the algorithm stopped, either because it converged or because the maximum number of iterations `maxIter` was reached;
+-   (optional, if `moments` is set to TRUE) `postMoments`: list containing the posterior mean (`postMoments.meanBeta`) and marginal posterior variances (`postMoments.varBeta`) of **β**.
 
 ``` r
 getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) {
