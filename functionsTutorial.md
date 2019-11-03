@@ -103,82 +103,80 @@ A = diag(as.double(sigma2), nrow = n, ncol = n)%*%(H - h)
 diagInvOmZ = diag(invOmZ)
 coeffMean_Z2 = diagInvOmZ-1/sigma2
       
-      # initialization of variables
-      meanZ = matrix(0,n,1)
-      mean_Z2 = matrix(0,n,1)
-      mu = matrix(0,n,1)
-      elbo = -1
-      diff = 1
-      nIter=0
+# initialization of variables
+meanZ = matrix(0,n,1)
+mean_Z2 = matrix(0,n,1)
+mu = matrix(0,n,1)
+elbo = -1
+diff = 1
+nIter=0
       
-      ######################################################
-      # CAVI ALGORITHM
-      ######################################################
+######################################################
+# CAVI ALGORITHM
+######################################################
       
-      while(diff > tolerance & nIter < maxIter) {
-        elboOld = elbo
-        sumLogPhi = 0
+while(diff > tolerance & nIter < maxIter) {
+ elboOld = elbo
+ sumLogPhi = 0
         
-        for(i in 1:n) {
-          mu[i] = A[i,]%*%meanZ
+ for(i in 1:n) {
+    mu[i] = A[i,]%*%meanZ
           
-          # compute first (needed for algorithm) and second (needed for ELBO) moments
-          musiRatio = mu[i]/sigma[i]
-          phiPhiRatio = dnorm(musiRatio)/pnorm((2*y[i]-1)*musiRatio)
-          meanZ[i] = mu[i] + (2*y[i]-1)*sigma[i]*phiPhiRatio
-          mean_Z2[i] = mu[i]^2+sigma2[i]+(2*y[i]-1)*mu[i]*sigma[i]*phiPhiRatio # needed for ELBO
-          sumLogPhi = sumLogPhi + log(pnorm((2*y[i]-1)*musiRatio))
-        }
+    # compute first (needed for algorithm) and second (needed for ELBO) moments
+    musiRatio = mu[i]/sigma[i]
+    phiPhiRatio = dnorm(musiRatio)/pnorm((2*y[i]-1)*musiRatio)
+    meanZ[i] = mu[i] + (2*y[i]-1)*sigma[i]*phiPhiRatio
+    mean_Z2[i] = mu[i]^2+sigma2[i]+(2*y[i]-1)*mu[i]*sigma[i]*phiPhiRatio # needed for ELBO
+    sumLogPhi = sumLogPhi + log(pnorm((2*y[i]-1)*musiRatio))
+  }
         
-        # computation of ELBO (up to an additive constant not depending on mu)
-        elbo = -(t(meanZ)%*%invOmZ%*%meanZ -
-                   sum((meanZ^2)*diagInvOmZ) +
-                   sum(mean_Z2*coeffMean_Z2))/2 -
-              sum(meanZ*mu/sigma2) + sum((mu^2)/sigma2)/2 + sumLogPhi
+  # computation of ELBO (up to an additive constant not depending on mu)
+  elbo = -(t(meanZ)%*%invOmZ%*%meanZ - sum((meanZ^2)*diagInvOmZ) + sum(mean_Z2*coeffMean_Z2))/2 -
+  sum(meanZ*mu/sigma2) + sum((mu^2)/sigma2)/2 + sumLogPhi
         
-        diff = abs(elbo-elboOld)
-        nIter = nIter+1
+  diff = abs(elbo-elboOld)
+  nIter = nIter+1
         
-        if(nIter%%100==0) {print(paste0("iter: ", nIter, ", ELBO: ", elbo))}
-      }
+  if(nIter%%100==0) {print(paste0("iter: ", nIter, ", ELBO: ", elbo))}
+}
       
-      # get the optimal parameters of the normals before truncation, now that convergence has been reached
-      mu = A%*%meanZ
+# get the optimal parameters of the normals before truncation, now that convergence has been reached
+mu = A%*%meanZ
       
-      results = list(mu = mu, sigma2 = sigma2, nIter = nIter)
+results = list(mu = mu, sigma2 = sigma2, nIter = nIter)
       
-      ######################################################
-      # (OPTIONAL) CLOSED-FORM MOMENTS' COMPUTATION
-      ######################################################
+######################################################
+# (OPTIONAL) CLOSED-FORM MOMENTS' COMPUTATION
+######################################################
       
-      if(moments == TRUE) {
-        # compute V and V%*%t(X), directly or with Woodbury
-        if(p<=n) {
-          diagV = diag(V) # V already computed
-          VXt = V%*%t(X)
-        } else{ # use Woodbury
-          VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
-          diagV = nu2*(1-colSums(t(VXt) * X))
-        }
+if(moments == TRUE) {
+# compute V and V%*%t(X), directly or with Woodbury
+  if(p<=n) {
+     diagV = diag(V) # V already computed
+     VXt = V%*%t(X)
+   } else{ # use Woodbury
+     VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
+     diagV = nu2*(1-colSums(t(VXt) * X))
+   }
         
-        musiRatio = mu/sigma
-        phiPhiRatio = dnorm(musiRatio)/pnorm((2*y-1)*musiRatio)
+musiRatio = mu/sigma
+phiPhiRatio = dnorm(musiRatio)/pnorm((2*y-1)*musiRatio)
         
-        meanZ = mu + (2*y-1)*sigma*phiPhiRatio
-        postVarZ = as.double(sigma2*(1-(2*y-1)*musiRatio*phiPhiRatio - phiPhiRatio^2))
+meanZ = mu + (2*y-1)*sigma*phiPhiRatio
+postVarZ = as.double(sigma2*(1-(2*y-1)*musiRatio*phiPhiRatio - phiPhiRatio^2))
         
-        W = apply(VXt,1,function(x) sum(x*x*postVarZ))
+W = apply(VXt,1,function(x) sum(x*x*postVarZ))
         
-        meanBeta = VXt%*%meanZ
-        varBeta = diagV + W
+meanBeta = VXt%*%meanZ
+varBeta = diagV + W
         
-        moments_PFM = list(meanBeta=meanBeta,varBeta=matrix(varBeta,ncol = 1))
+moments_PFM = list(meanBeta=meanBeta,varBeta=matrix(varBeta,ncol = 1))
         
-        results = c(results,postMoments=moments_PFM)
-      }
+results = c(results,postMoments=moments_PFM)
+ }
       
-      return(results)
-    }
+return(results)
+}
 ```
 
 ### <tt>sampleSUN\_PFM</tt>
