@@ -68,39 +68,40 @@ List containing:
     **β**.
 
 ``` r
-    getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) {
-      ######################################################
-      # PRECOMPUTATION
-      ######################################################
-      # define model dimensions
-      n = dim(X)[1]
-      p = dim(X)[2]
-      
-      # compute H = X%*%V%*%t(X) and Omega_z directly or with Woodbury
-      if(p<=n) {
-        # define prior covariance matrix and its inverse
-        Omega = diag(rep(nu2,p),p,p)
-        invOmega = diag(rep(1/nu2,p),p,p)
-        V = solve(t(X)%*%X+invOmega)
-        H = X%*%V%*%t(X)
-        invOmZ = diag(1,nrow=n,ncol=n) - H # needed for ELBO
-      } else{
-        XXt = X%*%t(X)
-        invOmZ = solve(diag(1,nrow=n,ncol=n)+nu2*XXt) # needed for ELBO
-        H = nu2*XXt%*%invOmZ
-      }
+getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) {
 
-      # compute optimal sigma2
-      h = diag(diag(H))
-      sigma2 = matrix(1/(1-diag(H)), ncol = 1)
-      sigma = sqrt(sigma2)
+######################################################
+# PRECOMPUTATION
+######################################################
+# define model dimensions
+n = dim(X)[1]
+p = dim(X)[2]
       
-      # compute matrix to write the CAVI update in a vectorized form
-      A = diag(as.double(sigma2), nrow = n, ncol = n)%*%(H - h)
+# compute H = X%*%V%*%t(X) and Omega_z directly or with Woodbury
+if(p<=n) {
+   # define prior covariance matrix and its inverse
+   Omega = diag(rep(nu2,p),p,p)
+   invOmega = diag(rep(1/nu2,p),p,p)
+   V = solve(t(X)%*%X+invOmega)
+   H = X%*%V%*%t(X)
+   invOmZ = diag(1,nrow=n,ncol=n) - H # needed for ELBO
+} else{
+   XXt = X%*%t(X)
+   invOmZ = solve(diag(1,nrow=n,ncol=n)+nu2*XXt) # needed for ELBO
+   H = nu2*XXt%*%invOmZ
+}
+
+# compute optimal sigma2
+h = diag(diag(H))
+sigma2 = matrix(1/(1-diag(H)), ncol = 1)
+sigma = sqrt(sigma2)
       
-      # other useful quantities needed for ELBO
-      diagInvOmZ = diag(invOmZ)
-      coeffMean_Z2 = diagInvOmZ-1/sigma2
+# compute matrix to write the CAVI update in a vectorized form
+A = diag(as.double(sigma2), nrow = n, ncol = n)%*%(H - h)
+      
+# other useful quantities needed for ELBO
+diagInvOmZ = diag(invOmZ)
+coeffMean_Z2 = diagInvOmZ-1/sigma2
       
       # initialization of variables
       meanZ = matrix(0,n,1)
