@@ -2,7 +2,7 @@
 
 This repository is associated with the article [Fasano, Durante and Zanella (2019). *Asymptotically Exact Variational Bayes for High-Dimensional Binary Regression Models*](https://). The **key contribution of the paper is outlined below**.
 
-> In this article we propose a novel variational approximation for the posterior distribution of the coefficients in a probit regression with Gaussian priors. Our method leverages a representation with global and local variables but, unlike classical mean-field assumptions, we crucially avoid a fully factorized approximation, and instead rely on a variational family in which only the joint density of the local variables is factorized.
+> In this article we propose a novel variational approximation for the posterior distribution of the coefficients in a probit regression with Gaussian priors. Our method leverages a representation with global and local variables but, unlike for classical mean-field assumptions, we crucially avoid a fully factorized approximation, and instead rely on a variational family in which only the joint density of the local variables is factorized.
 
 This repository provides **codes and tutorials to implement the inference methods associated with such a new result**. In particular, the focus is on the large *p* application to Alzheimer’s data outlined in Section 3 of the paper (see also [Craig-Shapiro et al., 2011](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0018850)). The complete tutorial can be found in the file [`AlzheimerTutorial.md`](https://github.com/augustofasano/Probit-PFMVB/blob/master/AlzheimerTutorial.md) where we also provide details to pre-process the original dataset available in the `R` package `AppliedPredictiveModeling`. 
 
