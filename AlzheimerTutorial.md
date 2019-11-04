@@ -27,7 +27,7 @@ library("transport")
 load("Alzheimer_Interactions.RData")
 ```
 
-Now, we take *n* = 300 observations to perform posterior inference and keep the remaining 33 observations for assessing out-of-sample predictive probabilities.
+Now, we take *n* = 300 observations to perform posterior inference and keep the remaining 33 units for assessing out-of-sample predictive probabilities.
 
 ``` r
 seed = 1
