@@ -304,7 +304,7 @@ F1 = ggplot(data_hist, aes(x=log(value))) + geom_histogram(position="identity", 
 ggsave("F1.png",width=7,height=3)
 ```
 
-Figure 2: density comparison in the best and worst case scenarios of each approximate method
+Figure 2: Best and worst case scenarios of each approximate method
 ---------------------------------------------------------------------------------------
 
 The following code reproduces **Figure 2**.
