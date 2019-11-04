@@ -123,7 +123,7 @@ Sampling from the exact unified skew-normal posterior
 
 In order to have a benchmark to assess the quality of the approximations provided by the above methods, we consider also **i.i.d. samples from the exact unified skew-normal posterior** drawn via the algorithm by [Durante (2019)](https://doi.org/10.1093/biomet/asz034). This can be done using the function `rSUNpost`.
 
-Also in this case, we monitor the **running time** of the sampler and the associated Monte-Carlo inference strategies.
+Also in this case, we monitor the **running time** of the sampler and of the associated Monte-Carlo inference strategies.
 
 ``` r
 # obtain a sample from the posterior distribution
