@@ -8,7 +8,7 @@ The Alzheimer's dataset
 
 As discussed in Section 3, the focus is to **model presence or absence of Alzheimer’s disease in its early stages as a function of demographic data, genotype and assay results**. The original dataset is available in the `R` library `AppliedPredictiveModeling` and arises from a study of the Washington University ([Craig-Schapiro et al., 2011](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0018850)).
 
-Here, we rely on an interpretable **probit regression** with pairwise interactions, thus obtaining *p* = 9036 predictors collected for *n* = 333 individuals. Following [Gelman et al. (2008)](https://projecteuclid.org/euclid.aoas/1231424214) and [Chopin and Ridgway (2017)](https://projecteuclid.org/euclid.ss/1491465628) the original measurements have been standardized to have mean 0 and standard deviation 0.5, before entering such variables and their interactions in the probit regression.
+Here, we rely on an interpretable **probit regression** with pairwise interactions, thus obtaining *p* = 9036 predictors collected for *n* = 333 individuals. Following [Gelman et al. (2008)](https://projecteuclid.org/euclid.aoas/1231424214) and [Chopin and Ridgway (2017)](https://projecteuclid.org/euclid.ss/1491465628) the original measurements have been standardized to have mean 0 and standard deviation 0.5.
 
 The final standardized dataset is avaiable in the [`data`](https://github.com/augustofasano/Probit-PFMVB/tree/master/data) folder and is called `Alzheimer_Interactions.RData`.
 
