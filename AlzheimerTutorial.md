@@ -97,7 +97,7 @@ Here, we implement the code to **obtain the optimal parameters of** *q*<sup>\*</
 
 Also this function outputs the **approximate posterior means and variances** of the coefficients in **β**. Moreover, we also compute the **approximate predictive probabilities** for the 33 units using the exact formula in Section 2.1 of the article.
 
-As above, the **running times** of the algorithm and of the inference part are monitored.
+As done before, the **running times** of the algorithm and of the inference part are monitored.
 
 ``` r
 # get optimal parameters and moments
@@ -121,7 +121,7 @@ timeMF_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 Sampling from the exact unified skew-normal posterior
 ========================
 
-In order to have a benchmark to assess the quality of the approximations provided by the above methods, we consider also **i.i.d. samples from the exact unified skew-normal posterior** drawn via the algorithm by [Durante, 2019](https://doi.org/10.1093/biomet/asz034). This can be done using the function `rSUNpost`.
+In order to have a benchmark to assess the quality of the approximations provided by the above methods, we consider also **i.i.d. samples from the exact unified skew-normal posterior** drawn via the algorithm by [Durante (2019)](https://doi.org/10.1093/biomet/asz034). This can be done using the function `rSUNpost`.
 
 Also in this case, we monitor the **running time** of the sampler and the associated Monte-Carlo inference strategies.
 
