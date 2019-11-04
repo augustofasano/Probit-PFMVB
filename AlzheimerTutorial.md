@@ -279,7 +279,7 @@ library(reshape)
 library(RColorBrewer)
 ```
   
-The code to reproduce each of the figures in the paper is reported in the following sub-sections. The three figures can be found in the folder [`img`](https://github.com/augustofasano/Probit-PFMVB/tree/master/img). 
+The code to reproduce each of the Figures in the paper is reported in the following sub-sections. The three Figures can be found in the folder [`img`](https://github.com/augustofasano/Probit-PFMVB/tree/master/img). 
 
 Figure 1: log-Wasserstein distances comparison
 ----------------------------------------------
