@@ -184,7 +184,7 @@ Let us now compute the **Wasserstein distances** between the *p* = 9036 appr
 
 Sampling from the optimal **PFM-VB** approximating density is performed through the function `sampleSUN_PFM`, while samples from the optimal **MF-VB** approximating Gaussian posterior distribution are obtained in a standard way, by exploiting the Choleski decomposition of the optimal covariance matrix **V**.
 
-The Wasserstein distances with the function `wasserstein1d` available in the `R` package `transport`.
+The Wasserstein distances are computed with the function `wasserstein1d` from the `R` package `transport`.
 
 ``` r
 # sample from approximate PFM posterior
