@@ -201,7 +201,7 @@ betaSUN_PFM = B + sampleMultNorm
 
 ### `getParamsMF`
 
-This function implements the **CAVI** to obtain the optimal FM approximating density. See **Algorithm 1** in the paper.
+This function implements the **CAVI** to obtain the optimal MF approximating density. See **Algorithm 1** in the paper.
 
 **Input**:
 
@@ -215,7 +215,7 @@ This function implements the **CAVI** to obtain the optimal FM approximating den
 
 -   `meanBeta`: optimal mean parameter **β**<sup>\*</sup> for the mean-field Gaussian approximation
 -   `diagV`: optimal marginal posterior variances for the mean-field Gaussian approximation, i.e. the diagonal elements of the  matrix **V**
--   `nIter`: number of iteration before the algorithm stopped, either because it converged or because the maximum number of iterations `maxIter` was reached
+-   `nIter`: number of iterations required by the **CAVI**, either because it converged or because the maximum number of iterations `maxIter` was reached
 
 ``` r
 getParamsMF = function(X,y,nu2, tolerance = 1e-2, maxIter = 1e4){
