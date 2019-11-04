@@ -270,7 +270,7 @@ save(moments, file = "moments.RData")
 Plotting the results
 ====================
 
-Let us first clean the workspace and load the needed packages.
+Let us first clean the workspace and load the required packages.
 
 ``` r
 rm(list = ls())
