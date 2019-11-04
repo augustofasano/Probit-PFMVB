@@ -179,7 +179,7 @@ save(predProb, file="predProb.RData")
 Wasserstein distances
 ---------------------
 
-Let us now compute the **Wasserstein distances** between the *p* = 9036 approximate marginal densities provided by the two VB methods and the exact posterior marginals. These distances are computed via Monte Carlo based on 20000 i.i.d. samples from the approximate and exact marginals. 
+Let us now compute the **Wasserstein distances** between the *p* = 9036 approximate marginal densities provided by the two VB methods and the exact posterior marginals. These distances are computed via Monte-Carlo methods based on 20000 i.i.d. samples from the approximate and exact marginals. 
 
 
 Sampling from the optimal **PFM-VB** approximating density is performed through the function `sampleSUN_PFM`, while samples from the optimal **MF-VB** approximating Gaussian posterior distribution are obtained in a standard way, by exploiting the Choleski decomposition of the optimal covariance matrix **V**.
