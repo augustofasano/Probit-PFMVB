@@ -144,66 +144,60 @@ return(results)
 }
 ```
 
-### <tt>sampleSUN\_PFM</tt>
+### `sampleSUN_PFM`
 
-This function **samples from the approximating optimal
-partially-factorized mean-field distribution**
-*q*<sub>PFM</sub><sup>\*</sup>(**β**), after the optimal parameters
-**μ**<sup>\*</sup> and **σ**<sup> \* 2</sup> have been obtained using
-the function <tt>getParamsPFM</tt>. The sampling is performed exploiting
-the factorization
-*q*<sub>PFM</sub><sup>\*</sup>(**β**, **z**) = *p*(**β** ∣ **z**) ⋅ *q*<sub>PFM</sub><sup>\*</sup>(**z**),
-keeping only the samples for **β**. It implements **Algorithm 3**, with
-some slight tuning modifications.
+This function **samples from the optimal unified skew-normal PFM approximating density** for **β**. See **Algorithm 3** in the paper. Here, we implement an efficient version of such a sampling routine.
 
 **Input**:
 
--   <tt>paramsPFM</tt>: output of the function <tt>getParamsPFM</tt>;
--   <tt>X</tt>: *n* × *p* matrix of explanatory variables;
--   <tt>y</tt>: binary vector of response variables;
--   <tt>nu2</tt>: prior variance for *β*<sub>*i*</sub>’s coefficients
-    (*ν*<sup>2</sup> in the paper);
--   <tt>nSample</tt>: number of i.i.d. samples from
-    *q*<sub>PFM</sub><sup>\*</sup>(**β**) to generate.
+-   `paramsPFM`: output of the function `getParamsPFM`
+-   `X`: *n* × *p* matrix of explanatory variables
+-   `y`: binary vector of response variables
+-   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nSample`: number of i.i.d. samples from *q*<sub>PFM</sub><sup>\*</sup>(**β**) to generate
 
-**Output**: *p* × `nSample` matrix, where each column is a sample from
-*q*<sub>PFM</sub><sup>\*</sup>(**β**).
+**Output**: *p* × `nSample` matrix, where each column is a sample from *q*<sub>PFM</sub><sup>\*</sup>(**β**).
 
-    sampleSUN_PFM = function(paramsPFM, X, y, nu2, nSample) {
-      # get model dimensions
-      n = dim(X)[1]
-      p = dim(X)[2]
+``` r
+sampleSUN_PFM = function(paramsPFM, X, y, nu2, nSample) {
+# get model dimensions
+n = dim(X)[1]
+p = dim(X)[2]
       
-      # get parameters useful for sampling
-      muTN = paramsPFM$mu
-      muTN[y==0] = -muTN[y==0] # generate all the truncated as left truncated, with support (0,Inf)
+# get parameters useful for sampling
+muTN = paramsPFM$mu
+muTN[y==0] = -muTN[y==0] # generate all the truncated as left truncated, with support (0,Inf)
       
-      Omega = diag(rep(nu2,p),p,p)
-      invOmega = diag(rep(1/nu2,p),p,p)
+Omega = diag(rep(nu2,p),p,p)
+invOmega = diag(rep(1/nu2,p),p,p)
       
-      if(p<=n) { # compute V directly or with Woodbury
-        V = solve(t(X)%*%X+invOmega)
-        VXt = V%*%t(X)
-      } else{
-        VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
-        V = Omega - VXt%*%(nu2*X)
-      }
-      V = 0.5*(V+t(V))
+if(p<=n) { # compute V directly or with Woodbury
+   V = solve(t(X)%*%X+invOmega)
+   VXt = V%*%t(X)
+ } else{
+   VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
+   V = Omega - VXt%*%(nu2*X)
+ }
+
+V = 0.5*(V+t(V))
       
-      # sample the truncated normal component
-      sampleTruncNorm = matrix(rtruncnorm(n*nSample, a = 0, b = Inf, mean = muTN, sd = sqrt(paramsPFM$sigma2)), nrow = n, ncol = nSample, byrow = F ) # rtruncnorm(10, a = 0, b = Inf, mean = c(-5,5), sd = c(1,1))  to understand the function
-      sampleTruncNorm[y==0,] = -sampleTruncNorm[y==0,] # need to adjust the sign of the variables for which y_i is 0
+# sample the truncated normal component
+sampleTruncNorm = matrix(rtruncnorm(n*nSample, a = 0, b = Inf, mean = muTN, sd = sqrt(paramsPFM$sigma2)), nrow = n, ncol = nSample, byrow = F ) # rtruncnorm(10, a = 0, b = Inf, mean = c(-5,5), sd = c(1,1))  to understand the function
+
+sampleTruncNorm[y==0,] = -sampleTruncNorm[y==0,] # need to adjust the sign of the variables for which y_i is 0
       
-      # linearly trasform the truncated normal samples
-      B = VXt%*%sampleTruncNorm
+# linearly trasform the truncated normal samples
+B = VXt%*%sampleTruncNorm
       
-      # sample the multivariate normal component
-      L = t(chol(V))
-      sampleMultNorm = L%*%matrix(rnorm(nSample*p),p,nSample)
+# sample the multivariate normal component
+L = t(chol(V))
+sampleMultNorm = L%*%matrix(rnorm(nSample*p),p,nSample)
       
-      # obtain a sample from the approximate posterior distribution by combining the multivariate normal a truncated normal components
-      betaSUN_PFM = B + sampleMultNorm
-    }
+# obtain a sample from the approximate posterior distribution by combining the multivariate normal a truncated normal components
+betaSUN_PFM = B + sampleMultNorm
+
+}
+```
 
 ### <tt>getParamsMF</tt>
 
