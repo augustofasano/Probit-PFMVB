@@ -15,7 +15,7 @@ The final standardized dataset is available in the [`data`](https://github.com/a
 Preliminary operations
 ======================
 
-Once the dataset `Alzheimer_Interactions.RData` and `functionsVariational.R` have been downloaded, set the working directory to the folder where they have been saved. Then, clean the workspace and load the dataset `Alzheimer_Interactions.RData` along with the source the file `functionsVariational.R` and other useful packages.
+Once the files `Alzheimer_Interactions.RData` and `functionsVariational.R` have been downloaded, set the working directory to the folder where they have been saved. Then, clean the workspace and load the dataset `Alzheimer_Interactions.RData` along with the source the file `functionsVariational.R` and other useful packages.
 
 ``` r
 rm(list=ls())
