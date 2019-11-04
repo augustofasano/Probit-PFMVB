@@ -85,8 +85,8 @@ xNew = matrix(X_Test[i,],ncol = 1)
 Xx = X%*%xNew
 sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
       
-predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))
-}
+predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))}
+
 timeSUN_PFM_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 ```
 
@@ -113,8 +113,8 @@ xNew = matrix(X_Test[i,],ncol = 1)
 Xx = X%*%xNew
 sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
       
-predMF[i] = as.double(pnorm(t(xNew)%*%paramsMF$meanBeta/sd))
-}
+predMF[i] = as.double(pnorm(t(xNew)%*%paramsMF$meanBeta/sd))}
+
 timeMF_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 ```
 
@@ -137,8 +137,8 @@ predSUN = double(length = length(yTest))
 for(i in 1:length(yTest)){
 xNew = matrix(X_Test[i,],ncol = 1)
       
-predSUN[i] = mean(pnorm(t(xNew)%*%betaSUN))
-}
+predSUN[i] = mean(pnorm(t(xNew)%*%betaSUN))}
+
 timeSUN_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 ```
 
@@ -200,13 +200,11 @@ betaMF = apply(betaMF,2, function(x) paramsMF$meanBeta+x)
 
 wassMF = double(length = p)
 for(i in 1:p) {
-    wassMF[i] = wasserstein1d(a = betaSUN[i,], b = betaMF[i,], p = 1)
-}
+    wassMF[i] = wasserstein1d(a = betaSUN[i,], b = betaMF[i,], p = 1)}
 
 wassPFM = double(length = p)
 for(i in 1:p) {
-    wassPFM[i] = wasserstein1d(a = betaSUN[i,], b = betaSUN_PFM[i,], p = 1)
-}
+    wassPFM[i] = wasserstein1d(a = betaSUN[i,], b = betaSUN_PFM[i,], p = 1)}
 ```
 
 Now, we find the indexes of the parameters for which we have the **best and worst approximations**, for both **MF-VB** and **PFM-VB**. Then, we **save the samples obtained for these four parameters** when sampling from the exact posterior and
@@ -225,8 +223,8 @@ indexList = c(bestWassMF,worstWassMF,bestWassPFM,worstWassPFM)
 count = 1
 for(i in indexList){
 listBestWorst[[count]]=cbind(SUN = betaSUN[i,],MF = betaMF[i,],PFM = betaSUN_PFM[i,])
-count = count+1
-}
+count = count+1}
+
 names(listBestWorst) = c("bestMF","worstMF","bestPFM","worstPFM")
 
 save(listBestWorst, file = "BestWorstScenarios.RData")
@@ -241,8 +239,7 @@ betaSUNcomparison = rSUNpost(X,y,nu2,nSample = nSample)
 
 wassComparison = double(length = p)
 for(i in 1:p) {
-    wassComparison[i] = wasserstein1d(a = betaSUN[i,], b = betaSUNcomparison[i,], p = 1)
-}
+    wassComparison[i] = wasserstein1d(a = betaSUN[i,], b = betaSUNcomparison[i,], p = 1)}
 ```
    
 All the Wasserstein distances are then saved.
