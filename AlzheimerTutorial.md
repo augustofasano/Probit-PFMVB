@@ -93,7 +93,7 @@ timeSUN_PFM_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 Mean-field variational Bayes
 ============================
 
-Here, we implement the code to **obtain the optimal parameters of** *q*<sup>\*</sup><sub>MF</sub>(**β**) as in **Algorithm 1**, using the function `getParamsMF`.
+Here, we implement the code to **obtain the optimal parameters of** *q*<sup>\*</sup><sub>MF</sub>(**β**) as in **Algorithm 1**, using `getParamsMF`.
 
 Also this function outputs the **approximate posterior means and variances** of the coefficients in **β**. Moreover, we also compute the **approximate predictive probabilities** for the 33 units using the exact formula in Section 2.1 of the article.
 
