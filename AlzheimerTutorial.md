@@ -256,7 +256,7 @@ save(wass, nSample, file="wassersteinDistances.RData") # save also number of sam
 Moments
 -------
 
-Finally, we **compute and save the first two marginal moments** of the exact posterior distribution (via Monte-Carlo) and those provided two approximate methods (stored in `paramsPMF` and `paramsMF`, respectively).
+Finally, we **compute and save the first two marginal moments** of the exact posterior distribution (via Monte-Carlo) and those provided by the two approximate methods (stored in `paramsPMF` and `paramsMF`, respectively).
 
 ``` r
 meanSUN = apply(betaSUN,1,mean)
