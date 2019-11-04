@@ -10,7 +10,7 @@ The **list of implemented functions** is reported below. Each of them is then an
 -   `getParamsPFM`: returns the parameters of the optimal PFM approximation (**Algorithm 2** in the paper)
 -   `sampleSUN_PFM`: samples from the optimal PFM approximating density (**Algorithm 3** in the paper)
 -   `getParamsMF`: returns the parameters of the optimal MF approximation (**Algorithm 1** in the paper)
--   `rSUNpost`: **samples from the exact SUN posterior distribution** ([Durante, 2019](https://doi.org/10.1093/biomet/asz034))
+-   `rSUNpost`: samples from the exact **SUN** posterior distribution ([Durante, 2019](https://doi.org/10.1093/biomet/asz034))
 
 ### `getParamsPFM`
 
