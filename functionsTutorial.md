@@ -156,7 +156,7 @@ This function **samples from the optimal unified skew-normal PFM approximating d
 -   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
 -   `nSample`: number of i.i.d. samples from *q*<sub>PFM</sub><sup>\*</sup>(**β**) to generate
 
-**Output**: *p* × `nSample` matrix, where each column is a sample from *q*<sub>PFM</sub><sup>\*</sup>(**β**).
+**Output**: A *p* × `nSample` matrix, where each column is a sample from *q*<sub>PFM</sub><sup>\*</sup>(**β**).
 
 ``` r
 sampleSUN_PFM = function(paramsPFM, X, y, nu2, nSample) {
@@ -174,10 +174,10 @@ invOmega = diag(rep(1/nu2,p),p,p)
 if(p<=n) { # compute V directly or with Woodbury
    V = solve(t(X)%*%X+invOmega)
    VXt = V%*%t(X)
- } else{
+} else{
    VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
    V = Omega - VXt%*%(nu2*X)
- }
+}
 
 V = 0.5*(V+t(V))
       
@@ -199,156 +199,139 @@ betaSUN_PFM = B + sampleMultNorm
 }
 ```
 
-### <tt>getParamsMF</tt>
+### `getParamsMF`
 
-This function implements **Algorithm 1** computing the parameters
-**β**<sup>\*</sup> and the diagonal elements of **V** for the optimal MF
-approximating distribution of **β**, i.e.
-*q*<sub>MF</sub><sup>\*</sup>(**β**) = *ϕ*(**β** − **β**<sup>\*</sup>; **V**).
+This function implements the **CAVI** to obtain the optimal FM approximating density. See **Algorithm 1** in the paper.
 
 **Input**:
 
--   <tt>X</tt>: *n* × *p* matrix of explanatory variables;
--   <tt>y</tt>: binary vector of response variables;
--   <tt>nu2</tt>: prior variance for *β*<sub>*i*</sub>’s coefficients
-    (*ν*<sup>2</sup> in the paper);
--   <tt>tolerance</tt>: absolute change in the
-    ELBO\[*q*<sub>MF</sub>(**β**, **z**)\] used to establish
-    convergence;
--   <tt>maxIter</tt>: maximum number of allowed iterations before
-    stopping;
+-   `X`: *n* × *p* matrix of explanatory variables
+-   `y`: binary vector of response variables
+-   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `tolerance`: absolute change in the ELBO\[*q*<sub>MF</sub>(**β**, **z**)\] used to establish convergence
+-   `maxIter`: maximum number of allowed iterations before stopping
 
-**Output**:
+**Output**: A list containing
 
-List containing:
+-   `meanBeta`: optimal mean parameter **β**<sup>\*</sup> for the mean-field Gaussian approximation
+-   `diagV`: optimal marginal posterior variances for the mean-field Gaussian approximation, i.e. the diagonal elements of the  matrix **V**
+-   `nIter`: number of iteration before the algorithm stopped, either because it converged or because the maximum number of iterations `maxIter` was reached
 
--   <tt>meanBeta</tt>: optimal mean parameter **β**<sup>\*</sup> for the
-    mean-field gaussian approximation;
--   <tt>diagV</tt>: optimal marginal posterior variances for the
-    mean-field Gaussian approximation, i.e. the diagonal elements of the
-    matrix **V**;
--   <tt>nIter</tt>: number of iteration before the algorithm stopped,
-    either because it converged or because the maximum number of
-    iterations <tt>maxIter</tt> was reached;
+``` r
+getParamsMF = function(X,y,nu2, tolerance = 1e-2, maxIter = 1e4){
 
-<!-- -->
-
-    getParamsMF = function(X,y,nu2, tolerance = 1e-2, maxIter = 1e4){
-      ######################################################
-      # PRECOMPUTATION
-      ######################################################
-      # define model dimensions
-      n = dim(X)[1]
-      p = dim(X)[2]
+######################################################
+# PRECOMPUTATION
+######################################################
+# define model dimensions
+n = dim(X)[1]
+p = dim(X)[2]
       
-      # compute V and other useful quantities
-      if(p<=n) {
-        Omega = diag(rep(nu2,p),p,p)
-        invOmega = diag(rep(1/nu2,p),p,p)
-        V = solve(t(X)%*%X+invOmega)
-        diagV =diag(V)
-        VXt = V%*%t(X)
-        H = X%*%V%*%t(X) # needed for ELBO
-      } else{
-        VXt = t(nu2*X)%*%solve(diag(1, nrow = n, ncol = n)+(nu2*X)%*%t(X))
-        # V = Omega - VXt%*%(nu2*X)
-        diagV = nu2*(1-colSums(t(VXt) * X))
-        XXt = X%*%t(X)
-        H = nu2*XXt%*%solve(diag(1,nrow=n,ncol=n)+nu2*XXt) # needed for ELBO
-      }
+# compute V and other useful quantities
+if(p<=n) {
+   Omega = diag(rep(nu2,p),p,p)
+   invOmega = diag(rep(1/nu2,p),p,p)
+   V = solve(t(X)%*%X+invOmega)
+   diagV =diag(V)
+   VXt = V%*%t(X)
+   H = X%*%V%*%t(X) # needed for ELBO
+} else{
+   VXt = t(nu2*X)%*%solve(diag(1, nrow = n, ncol = n)+(nu2*X)%*%t(X))
+   # V = Omega - VXt%*%(nu2*X)
+   diagV = nu2*(1-colSums(t(VXt) * X))
+   XXt = X%*%t(X)
+   H = nu2*XXt%*%solve(diag(1,nrow=n,ncol=n)+nu2*XXt) # needed for ELBO
+}
 
-      # other useful quantites
-      XVVXt = t(VXt)%*%VXt # needed for ELBO
-      signH = H
-      signH[y==0,] = -H[y==0,]
+# other useful quantites
+XVVXt = t(VXt)%*%VXt # needed for ELBO
+signH = H
+signH[y==0,] = -H[y==0,]
       
-      # initialization of variables
-      meanZ = matrix(0,n,1)
-      lambda = matrix(0,n,1) #X%*%meanBeta
-      diff = 1
-      elbo = -1
-      nIter=0
+# initialization of variables
+meanZ = matrix(0,n,1)
+lambda = matrix(0,n,1) #X%*%meanBeta
+diff = 1
+elbo = -1
+nIter=0
       
-      ######################################################
-      # CAVI ALGORITHM
-      ######################################################
+######################################################
+# CAVI ALGORITHM
+######################################################
 
-      while(diff > tolerance & nIter < maxIter) {
-        elboOld = elbo
+while(diff > tolerance & nIter < maxIter) {
+  elboOld = elbo
         
-        # update parameters
-        mu = H%*%meanZ
-        meanZ = mu +(2*y-1)*dnorm(mu)/pnorm((2*y-1)*mu)
+  # update parameters
+  mu = H%*%meanZ
+  meanZ = mu +(2*y-1)*dnorm(mu)/pnorm((2*y-1)*mu)
         
-        # compute ELBO
-        elbo = (t(meanZ)%*%XVVXt%*%meanZ)/nu2 + sum(log(pnorm(signH%*%meanZ)))
+  # compute ELBO
+  elbo = (t(meanZ)%*%XVVXt%*%meanZ)/nu2 + sum(log(pnorm(signH%*%meanZ)))
         
-        # compute change in ELBO
-        diff = abs(elbo-elboOld)
+  # compute change in ELBO
+  diff = abs(elbo-elboOld)
         
-        nIter = nIter+1
-        if(nIter %% 100 == 0) {print(paste0("iter: ", nIter, ", ELBO: ", elbo))}
-      }
-      meanBeta = VXt%*%meanZ
+  nIter = nIter+1
+  if(nIter %% 100 == 0) {print(paste0("iter: ", nIter, ", ELBO: ", elbo))}
+}
+meanBeta = VXt%*%meanZ
       
-      return(list(meanBeta = meanBeta, diagV = diagV, nIter = nIter))
-    }
+return(list(meanBeta = meanBeta, diagV = diagV, nIter = nIter))
+ }
+```
 
-### <tt>rSUNpost</tt>
+### `rSUNpost`
 
-This function **samples from the true unified skew-normal posterior
-distribution** *p*(**β** ∣ **y**), obtained by [Durante
-(2019)](https://arxiv.org/abs/1802.09565), under multivariate normal
-prior for **β** having the form
-*p*(**β**) = *ϕ*(**β**; *ν*<sup>2</sup>**I**<sub>*p*</sub>).
+This function **samples from the exact unified skew-normal posterior distribution** *p*(**β** ∣ **y**), obtained by [Durante
+(2019)](https://doi.org/10.1093/biomet/asz034), under multivariate normal prior for **β** having the form *p*(**β**) = *ϕ*(**β**; *ν*<sup>2</sup>**I**<sub>*p*</sub>).
 
 **Input**:
 
--   <tt>X</tt>: *n* × *p* matrix of explanatory variables;
--   <tt>y</tt>: binary vector of response variables;
--   <tt>nu2</tt>: prior variance for *β*<sub>*i*</sub>’s coefficients
-    (*ν*<sup>2</sup> in the paper);
--   <tt>nSample</tt>: number of i.i.d. samples from *p*(**β** ∣ **y**)
-    to generate.
+-   `X`: *n* × *p* matrix of explanatory variables
+-   `y`: binary vector of response variables
+-   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nSample`: number of i.i.d. samples from *p*(**β** ∣ **y**) to generate
 
-**Output**: *p* × `nSample` matrix, where each column is a sample from
-*p*(**β** ∣ **y**).
+**Output**: A *p* × `nSample` matrix, where each column is a sample from *p*(**β** ∣ **y**)
 
-    rSUNpost = function(X,y,nu2,nSample) {
-      # define model dimensions
-      n = dim(X)[1]
-      p = dim(X)[2]
+``` r
+rSUNpost = function(X,y,nu2,nSample) {
+# define model dimensions
+n = dim(X)[1]
+p = dim(X)[2]
       
-      # get parameters useful for sampling
-      Omega = diag(rep(nu2,p),p,p)
-      invOmega = diag(rep(1/nu2,p),p,p)
+# get parameters useful for sampling
+Omega = diag(rep(nu2,p),p,p)
+invOmega = diag(rep(1/nu2,p),p,p)
 
-      signX = X
-      signX[y==0,] = -X[y==0,]
-      Gamma_post_unnormalized = diag(1,n,n)+(nu2*signX)%*%t(signX)
-      inv_Gamma_post_unnormalized = solve(Gamma_post_unnormalized)
-      s = diag(sqrt(Gamma_post_unnormalized[cbind(1:n,1:n)]),n,n)
-      s_1 = diag(1/s[cbind(1:n,1:n)],n,n)
-      gamma_post = matrix(0,n,1) # because prior mean is set to 0
-      Gamma_post = s_1%*%Gamma_post_unnormalized%*%s_1
+signX = X
+signX[y==0,] = -X[y==0,]
+Gamma_post_unnormalized = diag(1,n,n)+(nu2*signX)%*%t(signX)
+inv_Gamma_post_unnormalized = solve(Gamma_post_unnormalized)
+s = diag(sqrt(Gamma_post_unnormalized[cbind(1:n,1:n)]),n,n)
+s_1 = diag(1/s[cbind(1:n,1:n)],n,n)
+gamma_post = matrix(0,n,1) # because prior mean is set to 0
+Gamma_post = s_1%*%Gamma_post_unnormalized%*%s_1
       
-      V = Omega-t(nu2*signX)%*%inv_Gamma_post_unnormalized%*%(signX*nu2)
-      V = 0.5*(V+t(V))
-      L = t(chol(V))
+V = Omega-t(nu2*signX)%*%inv_Gamma_post_unnormalized%*%(signX*nu2)
+V = 0.5*(V+t(V))
+L = t(chol(V))
       
-      # compute multiplicative coefficients for the truncated multivariate normal component
-      coefTruncNorm = t(nu2*signX)%*%inv_Gamma_post_unnormalized%*%s
+# compute multiplicative coefficients for the truncated multivariate normal component
+coefTruncNorm = t(nu2*signX)%*%inv_Gamma_post_unnormalized%*%s
       
-      # sample the multivariate normal component
-      sampleMultNorm = matrix(rnorm(nSample*p),p,nSample)
+# sample the multivariate normal component
+sampleMultNorm = matrix(rnorm(nSample*p),p,nSample)
       
-      # sample the truncated multivariate normal component
-      if(n == 1) {
-        sampleTruncNorm = matrix(rtruncnorm(n = Nsample, a = -gamma_post, b = Inf, mean = 0, sd = 1), nrow = 1, ncol = nSample)
-      } else{
-        sampleTruncNorm = mvrandn(l = -gamma_post, u = rep(Inf,n), Sig = Gamma_post, n = nSample)
-      }
+# sample the truncated multivariate normal component
+if(n == 1) {
+   sampleTruncNorm = matrix(rtruncnorm(n = Nsample, a = -gamma_post, b = Inf, mean = 0, sd = 1), nrow = 1, ncol = nSample)
+} else{
+   sampleTruncNorm = mvrandn(l = -gamma_post, u = rep(Inf,n), Sig = Gamma_post, n = nSample)
+}
       
-      # combine the multivariate normal and truncated normal components
-      sampleSUN = L%*%sampleMultNorm+coefTruncNorm%*%sampleTruncNorm
-    }
+# combine the multivariate normal and truncated normal components
+sampleSUN = L%*%sampleMultNorm+coefTruncNorm%*%sampleTruncNorm
+}
+```
