@@ -95,7 +95,7 @@ Mean-field variational Bayes
 
 Here, we implement the code to **obtain the optimal parameters of** *q*<sup>\*</sup><sub>MF</sub>(**β**) as in **Algorithm 1**, using the function `getParamsMF`.
 
-Also this function outputs the **approximate posterior means and variances** of the coefficients in **β**. Moreover, we also compute the **approximate predictive probabilities** for the 33 observations using the exact formula in Section 2.1 of the article.
+Also this function outputs the **approximate posterior means and variances** of the coefficients in **β**. Moreover, we also compute the **approximate predictive probabilities** for the 33 units using the exact formula in Section 2.1 of the article.
 
 As above, the **running times** of the algorithm and of the inference part are monitored.
 
