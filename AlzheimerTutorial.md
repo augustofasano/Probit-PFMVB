@@ -10,7 +10,7 @@ As discussed in Section 3, the focus is to **model presence or absence of Alzhei
 
 Here, we rely on an interpretable **probit regression** with adding pairwise interactions, thus obtaining *p* = 9036 predictors collected for *n* = 333 individuals. Following [Gelman et al. (2008)](https://projecteuclid.org/euclid.aoas/1231424214) and [Chopin and Ridgway (2017)](https://projecteuclid.org/euclid.ss/1491465628) the original measurements have been standardized to have mean 0 and standard deviation 0.5, before entering such variables and their interactions in the probit regression.
 
-The final standardized dataset has been made avaiable in the [`data`](https://github.com/augustofasano/Probit-PFMVB/tree/master/data) folder and is called `Alzheimer_Interactions.RData`.
+The final standardized dataset is avaiable in the [`data`](https://github.com/augustofasano/Probit-PFMVB/tree/master/data) folder and is called `Alzheimer_Interactions.RData`.
 
 Preliminary operations
 ======================
@@ -57,57 +57,38 @@ invIXXt = solve(diag(1,nrow=n,ncol=n)+nu2*(X%*%t(X)))
 Partially-factorized mean-field variational Bayes
 =================================================
 
-At this point, we can **get the optimal parameters of**
-*q*<sub>PFM</sub><sup>\*</sup>(**z**) as in **Algorithm 2**, with the
-function <tt>getParamsPFM</tt>. Then, the optimal joint <span
-class="smallcaps">PFM-VB</span> approximating density immediately
-follows from the equality
-*q*<sub>PFM</sub><sup>\*</sup>(**β**, **z**) = *p*(**β** ∣ **z**)*q*<sub>PFM</sub><sup>\*</sup>(**z**).
+We start our analysis by implementing our proposed **partially-factorized mean-field variational** approximation. Consistent with this goal, we consider the function `getParamsPFM` which provides the optimal *q*<sup>\*</sup><sub>PFM</sub>(**β**, **z**) = *p*(**β** ∣ **z**)*q*<sup>\*</sup><sub>PFM</sub>(**z**) via the **CAVI** in **Algorithm 2**.
 
-The function also outputs the posterior means and marginal variances of
-**β**. Moreover, we also compute the **approximate predictive
-probabilities** for the 33 observations in the test set,
-i.e. pr<sub>PFM</sub>(*y*<sub>NEW</sub> = 1 ∣ **y**) = ∫*Φ*(**x**<sub>NEW</sub><sup>⊺</sup>**β**)*q*<sub>PFM</sub><sup>\*</sup>(**β**)*d***β** = 𝔼<sub>*q*<sub>PFM</sub><sup>\*</sup>(**z**)</sub>{*Φ*\[**x**<sub>NEW</sub><sup>⊺</sup> **V** **X**<sup>⊺</sup> **z**(1 + **x**<sub>NEW</sub><sup>⊺</sup> **V** **x**<sub>NEW</sub>)<sup> − 1/2</sup>\]},
-see **Proposition 2** in the paper.
+The function also outputs the posterior means and marginal variances of **β**. Moreover, we also compute the **approximate predictive probabilities** for the 33 observations in the test set via Monte-Carlo integration as discussed in Section 2.2 of the article.
 
-Such predictive probabilities are computed via Monte-Carlo integration
-as
+For comparison, we keep track of the **running time** of the algorithm to converge to the optimal solution and the time to compute the marginal moments along with the predictive probabilities.
 
-`nSampleZ`<sup> − 1</sup>∑<sub>*r* = 1, …, `nSampleZ`</sub> *Φ*\[**x**<sub>NEW</sub><sup>⊺</sup> **V** **X**<sup>⊺</sup> **z**<sup>(*r*)</sup>(1 + **x**<sub>NEW</sub><sup>⊺</sup> **V** **x**<sub>NEW</sub>)<sup> − 1/2</sup>\],
+``` r
+tolerance = 1e-3 # tolerance to establish ELBO convergence
 
-where **z**<sup>(*r*)</sup> are i.i.d. samples from
-*q*<sub>PFM</sub><sup>\*</sup>(**z**), which are straightforward to
-sample as one only needs to sample from univariate truncated normals,
-thanks to the factorization of *q*<sub>PFM</sub><sup>\*</sup>(**z**).
+# get optimal parameters and moments
+startTime = Sys.time()
+paramsPFM = getParamsPFM(X=X,y=y,nu2=nu2,moments=TRUE,tolerance=tolerance,maxIter=1e4)
+timeSUN_PFM_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 
-For comparison purspose, we keep track of the **running time** for the
-algorithm to converge and return the marginal moments, and the running
-time to compute the predictive probabilities.
+# get the predictive probabilities
+startTime = Sys.time()
+nSampleZ = 5e3
+muTN = paramsPFM$mu
+muTN[y==0] = -muTN[y==0]
+sampleTruncNorm = matrix(rtruncnorm(n*nSampleZ, a = 0, b = Inf, mean = muTN, sd = sqrt(paramsPFM$sigma2)), nrow = n, ncol = nSampleZ, byrow = F )
+sampleTruncNorm[y==0,] = -sampleTruncNorm[y==0,] # need to adjust the sign of the variables for which y_i is 0
 
-    tolerance = 1e-3 # tolerance to establish ELBO convergence
-
-    # get optimal parameters and moments
-    startTime = Sys.time()
-    paramsPFM = getParamsPFM(X=X,y=y,nu2=nu2,moments=TRUE,tolerance=tolerance,maxIter=1e4)
-    timeSUN_PFM_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
-
-    # get the predictive probabilities
-    startTime = Sys.time()
-    nSampleZ = 5e3
-    muTN = paramsPFM$mu
-    muTN[y==0] = -muTN[y==0]
-    sampleTruncNorm = matrix(rtruncnorm(n*nSampleZ, a = 0, b = Inf, mean = muTN, sd = sqrt(paramsPFM$sigma2)), nrow = n, ncol = nSampleZ, byrow = F )
-    sampleTruncNorm[y==0,] = -sampleTruncNorm[y==0,] # need to adjust the sign of the variables for which y_i is 0
-
-    predPFM = double(length = length(yTest))
-    for(i in 1:length(yTest)){
-      xNew = matrix(X_Test[i,],ncol = 1)
-      Xx = X%*%xNew
-      sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
+predPFM = double(length = length(yTest))
+for(i in 1:length(yTest)){
+xNew = matrix(X_Test[i,],ncol = 1)
+Xx = X%*%xNew
+sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
       
-      predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))
-    }
-    timeSUN_PFM_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))
+}
+timeSUN_PFM_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+```
 
 Mean-field variational Bayes
 ============================
