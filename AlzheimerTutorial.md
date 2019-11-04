@@ -45,9 +45,9 @@ y = y[trainingSet]
 Finally, we conclude the preliminary operations by specifying the **model dimension** *p*, the **prior variance** and the **number of i.i.d samples** to generate from the exact and approximate posterior densities. We also precompute **V** **X**<sup>⊺</sup> and (**I**<sub>*n*</sub> + *ν*<sup>2</sup>**X** **X**<sup>⊺</sup>)<sup> − 1</sup> to be used in the computation of the predictive probabilities.
 
 ``` r
-p = dim(X)[2] # get number of covariates
+p = dim(X)[2] # number of covariates
 nu2 = 25 # prior variance
-nSample = 2e4 #fix number of samples
+nSample = 2e4 # fix number of samples
 
 # precompute some useful quantities to be used for the predictive probabilities
 VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
