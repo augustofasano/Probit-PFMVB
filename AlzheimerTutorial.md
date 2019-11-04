@@ -1,86 +1,58 @@
 Introduction
 ============
 
-As described in the README.md file, this tutorial contains general
-guidelines and code to **perform the analyses for the Alzheimer
-application in Section 3** of the paper. In particular, you will find
-information on how to download the data, detailed <tt>R</tt> code to
-**implement the different methods for posterior inference** discussed in
-Section 2 and guidelines to produce Figures 1 to 3 in the paper. For
-implementation purposes, execute the code below considering the same
-order in which is presented.
+As described in the [`README.md`](https://github.com/augustofasano/Probit-PFMVB/blob/master/README.md) file, this tutorial contains general guidelines and code to **perform the analyses for the Alzheimer's application in Section 3** of the paper. In particular, the tutorial contains information on how to **load the data**, detailed `R` code to **implement the different methods for posterior inference** discussed in Section 2 and guidelines to **produce Figures 1, 2 and 3 in the paper**. For implementation purposes, execute the code below considering the same order in which is presented.
 
 The Alzheimer dataset
 =====================
 
-As discussed in Section 3, the focus is to **model presence or absence
-of Alzheimer’s disease in its early stages as a function of demographic
-data, genotype and assay results**. The original dataset is available in
-the <tt>R</tt> library <tt>AppliedPredictiveModeling</tt> and arises
-from a study of the Washington University to determine if biological
-measurements from cerebrospinal fluid are useful in modeling and
-predicting early stages of Alzheimer’s disease ([Craig-Schapiro et al.,
-2011](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0018850)).
-Here, we **avoid excessively complex black-box algorithms** and rely on
-an **interpretable probit regression**, which improves flexibility by
-simply adding pairwise interactions, thus obtaining *p* = 9036
-predictors collected for *n* = 333 individuals. Following [Gelman et al.
-(2008)](https://projecteuclid.org/euclid.aoas/1231424214) and [Chopin
-and Ridgway (2017)](https://projecteuclid.org/euclid.ss/1491465628) the
-original measurements have been standardized to have mean 0 and standard
-deviation 0.5, before entering such variables and their interactions in
-the probit regression.
+As discussed in Section 3, the focus is to **model presence or absence of Alzheimer’s disease in its early stages as a function of demographic data, genotype and assay results**. The original dataset is available in the `R` library `AppliedPredictiveModeling` and arises from a study of the Washington University to determine if biological measurements from cerebrospinal fluid are useful in modeling and predicting early stages of Alzheimer’s disease ([Craig-Schapiro et al., 2011](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0018850)).
 
-The final dataset <tt>Alzheimer.RData</tt> is available in the
-<tt>data</tt> folder of this repository.
+Here, we rely on an interpretable **probit regression** with adding pairwise interactions, thus obtaining *p* = 9036 predictors collected for *n* = 333 individuals. Following [Gelman et al. (2008)](https://projecteuclid.org/euclid.aoas/1231424214) and [Chopin and Ridgway (2017)](https://projecteuclid.org/euclid.ss/1491465628) the original measurements have been standardized to have mean 0 and standard deviation 0.5, before entering such variables and their interactions in the probit regression.
+
+The final standardized dataset has been made avaiable in the [`data`](https://github.com/augustofasano/Probit-PFMVB/tree/master/data) folder and is called `Alzheimer_Interactions.RData`.
 
 Preliminary operations
 ======================
 
-Once the files <tt>Alzheimer.RData</tt> and
-<tt>functionsVariational.R</tt> have been downloaded, set the working
-directory to the folder they have been saved in. Then, clean the
-workspace and load the data, source the file
-<tt>functionsVariational.R</tt> and load other useful packages.
+Once the dataset `Alzheimer_Interactions.RData` and `functionsVariational.R` have been downloaded, set the working directory to the folder where they have been saved. Then, clean the workspace and load the dataset `Alzheimer_Interactions.RData` along with the source the file `functionsVariational.R` and other useful packages.
 
-    rm(list=ls())
-    source("functionsVariational.R")
-    library("TruncatedNormal")
-    library("truncnorm")
-    library("transport")
+``` r
+rm(list=ls())
+source("functionsVariational.R")
+library("TruncatedNormal")
+library("truncnorm")
+library("transport")
 
-    load("Alzheimer_Interactions.RData")
+load("Alzheimer_Interactions.RData")
+```
 
-Now, we take *n* = 300 observations to perform posterior inference,
-keeping the remaining 33 observations for out-of-sample analysis.
+Now, we take *n* = 300 observations to perform posterior inference and keep the remaining 33 observations for assessing out-of-sample predictive probabilities.
 
-    seed = 1
-    set.seed(seed)
-    n = 300 # training set size
-    trainingSet = sample(x = dim(X)[1],size = n, replace = FALSE)
+``` r
+seed = 1
+set.seed(seed)
+n = 300 # training set size
+trainingSet = sample(x = dim(X)[1],size = n, replace = FALSE)
 
-    # split training and test sets
-    X_Test = X[-trainingSet,]
-    yTest = y[-trainingSet]
-    X = X[trainingSet,]
-    y = y[trainingSet]
+# split training and test sets
+X_Test = X[-trainingSet,]
+yTest = y[-trainingSet]
+X = X[trainingSet,]
+y = y[trainingSet]
+```
 
-Finally, we conclude the preliminary part by getting the model
-dimension, specifying the prior variance (in accordance with [Gelman et
-al. (2008)](https://projecteuclid.org/euclid.aoas/1231424214)
-guidelines) and the number of i.i.d samples to generate from the exact
-and approximate posterior densities. We also precompute
-**V** **X**<sup>⊺</sup> and
-(**I**<sub>*n*</sub> + *ν*<sup>2</sup>**X** **X**<sup>⊺</sup>)<sup> − 1</sup>
-to be used in the computation of the predictive probabilities.
+Finally, we conclude the preliminary operations by specifying the **model dimension** *p*, the **prior variance** and the **number of i.i.d samples** to generate from the exact and approximate posterior densities. We also precompute **V** **X**<sup>⊺</sup> and (**I**<sub>*n*</sub> + *ν*<sup>2</sup>**X** **X**<sup>⊺</sup>)<sup> − 1</sup> to be used in the computation of the predictive probabilities.
 
-    p = dim(X)[2] # get number of covariates
-    nu2 = 25 # prior variance
-    nSample = 2e4 #fix number of samples
+``` r
+p = dim(X)[2] # get number of covariates
+nu2 = 25 # prior variance
+nSample = 2e4 #fix number of samples
 
-    # precompute some useful quantities to be used for the predictive probabilities
-    VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
-    invIXXt = solve(diag(1,nrow=n,ncol=n)+nu2*(X%*%t(X)))
+# precompute some useful quantities to be used for the predictive probabilities
+VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
+invIXXt = solve(diag(1,nrow=n,ncol=n)+nu2*(X%*%t(X)))
+```
 
 Partially-factorized mean-field variational Bayes
 =================================================
