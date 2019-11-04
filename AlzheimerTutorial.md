@@ -3,7 +3,7 @@ Introduction
 
 As described in the [`README.md`](https://github.com/augustofasano/Probit-PFMVB/blob/master/README.md) file, this tutorial contains general guidelines and code to **perform the analyses for the Alzheimer's application in Section 3** of the paper. In particular, the tutorial contains information on how to **load the data**, detailed `R` code to **implement the different methods for posterior inference** discussed in Section 2 and guidelines to **produce Figures 1, 2 and 3 in the paper**. For implementation purposes, execute the code below considering the same order in which is presented.
 
-The Alzheimer dataset
+The Alzheimer's dataset
 =====================
 
 As discussed in Section 3, the focus is to **model presence or absence of Alzheimer’s disease in its early stages as a function of demographic data, genotype and assay results**. The original dataset is available in the `R` library `AppliedPredictiveModeling` and arises from a study of the Washington University to determine if biological measurements from cerebrospinal fluid are useful in modeling and predicting early stages of Alzheimer’s disease ([Craig-Schapiro et al., 2011](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0018850)).
