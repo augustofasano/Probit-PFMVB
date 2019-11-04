@@ -29,7 +29,7 @@ This function implements the **CAVI** to obtain the optimal PFM approximating de
 
 -   `mu`: optimal value **μ**<sup>\*</sup>
 -   `sigma2`: optimal value **σ**<sup> \* 2</sup>
--   `nIter`: number of iteration before the algorithm stopped, either because it converged or because the maximum number of iterations `maxIter` was reached
+-   `nIter`: number of iterations required by the **CAVI**, either because it converged or because the maximum number of iterations `maxIter` was reached
 -   (optional, if `moments` is set to TRUE) `postMoments`: list containing the posterior mean (`postMoments.meanBeta`) and marginal posterior variances (`postMoments.varBeta`) of **β**
 
 ``` r
