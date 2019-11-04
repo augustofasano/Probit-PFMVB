@@ -154,9 +154,9 @@ This function **samples from the optimal unified skew-normal PFM approximating d
 -   `X`: *n* × *p* matrix of explanatory variables
 -   `y`: binary vector of response variables
 -   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
--   `nSample`: number of i.i.d. samples from *q*<sub>PFM</sub><sup>\*</sup>(**β**) to generate
+-   `nSample`: number of i.i.d. samples from *q*<sup>\*</sup><sub>PFM</sub>(**β**) to generate
 
-**Output**: A *p* × `nSample` matrix, where each column is a sample from *q*<sub>PFM</sub><sup>\*</sup>(**β**).
+**Output**: A *p* × `nSample` matrix, where each column is a sample from *q*<sup>\*</sup><sub>PFM</sub>(**β**).
 
 ``` r
 sampleSUN_PFM = function(paramsPFM, X, y, nu2, nSample) {
