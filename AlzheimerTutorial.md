@@ -162,7 +162,7 @@ The **CAVI** for **PFM-VB** converges in 7 iterations, whereas that for  **MF-VB
 Summaries of the results
 ========================
 
-We now compute different **summary quantities** which are required to produce the figures in Section 3 of the paper.
+We now compute different **summary quantities** which are required to produce the Figures in Section 3 of the paper.
 
 Predictive probabilities
 ------------------------
