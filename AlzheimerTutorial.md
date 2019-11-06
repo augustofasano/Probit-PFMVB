@@ -54,7 +54,7 @@ VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
 invIXXt = solve(diag(1,nrow=n,ncol=n)+nu2*(X%*%t(X)))
 ```
 
-Partially-factorized mean-field variational Bayes
+Partially factorized mean-field variational Bayes
 =================================================
 
 We start our analysis by implementing our proposed **partially factorized mean-field variational** approximation. Consistent with this goal, we consider the function `getParamsPFM` which provides the optimal *q*<sup>\*</sup><sub>PFM</sub>(**β**, **z**) = *p*(**β** ∣ **z**)*q*<sup>\*</sup><sub>PFM</sub>(**z**) via the **CAVI** in **Algorithm 2**.
