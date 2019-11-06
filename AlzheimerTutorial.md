@@ -57,7 +57,7 @@ invIXXt = solve(diag(1,nrow=n,ncol=n)+nu2*(X%*%t(X)))
 Partially-factorized mean-field variational Bayes
 =================================================
 
-We start our analysis by implementing our proposed **partially-factorized mean-field variational** approximation. Consistent with this goal, we consider the function `getParamsPFM` which provides the optimal *q*<sup>\*</sup><sub>PFM</sub>(**β**, **z**) = *p*(**β** ∣ **z**)*q*<sup>\*</sup><sub>PFM</sub>(**z**) via the **CAVI** in **Algorithm 2**.
+We start our analysis by implementing our proposed **partially factorized mean-field variational** approximation. Consistent with this goal, we consider the function `getParamsPFM` which provides the optimal *q*<sup>\*</sup><sub>PFM</sub>(**β**, **z**) = *p*(**β** ∣ **z**)*q*<sup>\*</sup><sub>PFM</sub>(**z**) via the **CAVI** in **Algorithm 2**.
 
 The function also outputs the  **approximate posterior means and variances** of the coefficients in **β**. Moreover, we also compute the **approximate predictive probabilities** for the 33 observations in the test set via Monte-Carlo integration as discussed in Section 2.2 of the article.
 
