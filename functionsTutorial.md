@@ -20,7 +20,7 @@ This function implements the **CAVI** to obtain the optimal PFM approximating de
 
 -   `X`: *n* × *p* matrix of explanatory variables
 -   `y`: binary vector of response variables
--   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
 -   `moments`: logical, do you want to obtain marginal moments in the output?
 -   `tolerance`: absolute change in the ELBO\[*q*<sub>PFM</sub>(**z**)\] used to establish convergence
 -   `maxIter`: maximum number of allowed iterations before stopping
@@ -146,14 +146,14 @@ return(results)
 
 ### `sampleSUN_PFM`
 
-This function **samples from the optimal unified skew-normal PFM approximating density** for **β**. See **Algorithm 3** in the paper. Here, we implement an efficient version of such a sampling routine.
+This function **samples from the optimal unified skew-normal PFM approximating density** for **β**. See **Algorithm 3** in the paper. Here, we implement an efficient version of such a routine which samples from the **joint** approximate density, thus allowing Monte Carlo inference on any complex functional of **β**. **Note** that, as discussed in the article, if the interest is only on the marginals of **β**, then sampling from each *β*<sub>*j*</sub> can be done at a much higher speed.
 
 **Input**:
 
 -   `paramsPFM`: output of the function `getParamsPFM`
 -   `X`: *n* × *p* matrix of explanatory variables
 -   `y`: binary vector of response variables
--   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
 -   `nSample`: number of i.i.d. samples from *q*<sup>\*</sup><sub>PFM</sub>(**β**) to generate
 
 **Output**: A *p* × `nSample` matrix, where each column is a sample from *q*<sup>\*</sup><sub>PFM</sub>(**β**).
@@ -207,7 +207,7 @@ This function implements the **CAVI** to obtain the optimal MF approximating den
 
 -   `X`: *n* × *p* matrix of explanatory variables
 -   `y`: binary vector of response variables
--   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
 -   `tolerance`: absolute change in the ELBO\[*q*<sub>MF</sub>(**β**, **z**)\] used to establish convergence
 -   `maxIter`: maximum number of allowed iterations before stopping
 
@@ -290,7 +290,7 @@ This function **samples from the exact unified skew-normal posterior distributio
 
 -   `X`: *n* × *p* matrix of explanatory variables
 -   `y`: binary vector of response variables
--   `nu2`: prior variance for *β*<sub>*i*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
 -   `nSample`: number of i.i.d. samples from *p*(**β** ∣ **y**) to generate
 
 **Output**: A *p* × `nSample` matrix, where each column is a sample from *p*(**β** ∣ **y**)
