@@ -1,7 +1,7 @@
 Introduction
 ============
 
-As described in the [`README.md`](https://github.com/augustofasano/Probit-PFMVB/blob/master/README.md) file, this tutorial contains general guidelines and code to **perform the analyses for the Alzheimer's application in Section 3** of the paper. In particular, the tutorial contains information on how to **load the data**, detailed `R` code to **implement the different methods for posterior inference** discussed in Section 2 and guidelines to **produce Figures 1, 2 and 3 in the paper**. For implementation purposes, execute the code below considering the same order in which is presented.
+As described in the [`README.md`](https://github.com/augustofasano/Probit-PFMVB/blob/master/README.md) file, this tutorial contains general guidelines and code to **perform the analyses for the Alzheimer's application in Section 3** of the paper. In particular, the tutorial contains information on how to **load the data**, detailed `R` code to **implement the different methods for posterior inference** discussed in Section 2 and guidelines to **produce Figures 1 to 4 in the paper**. For implementation purposes, execute the code below considering the same order in which is presented.
 
 The Alzheimer's dataset
 =====================
@@ -42,7 +42,7 @@ X = X[trainingSet,]
 y = y[trainingSet]
 ```
 
-Finally, we conclude the preliminary operations by specifying the **model dimension** *p*, the **prior variance** and the **number of i.i.d samples** to generate from the exact and approximate posterior densities. We also precompute **V** **X**<sup>⊺</sup> and (**I**<sub>*n*</sub> + *ν*<sup>2</sup>**X** **X**<sup>⊺</sup>)<sup> − 1</sup> to be used in the computation of the predictive probabilities.
+Finally, we conclude the preliminary operations by specifying the **model dimension** *p*, the **prior variance** *ν*<sub>*p*</sub><sup>2</sup> and the **number of i.i.d samples** to generate from the exact and approximate posterior densities. We also precompute **V** **X**<sup>⊺</sup> and (**I**<sub>*n*</sub> + *ν*<sub>*p*</sub><sup>2</sup>**X** **X**<sup>⊺</sup>)<sup> − 1</sup> to be used in the computation of the predictive probabilities.
 
 ``` r
 p = dim(X)[2] # number of covariates
@@ -84,7 +84,7 @@ for(i in 1:length(yTest)){
 xNew = matrix(X_Test[i,],ncol = 1)
 Xx = X%*%xNew
 sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
-      
+
 predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))}
 
 timeSUN_PFM_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
@@ -112,7 +112,7 @@ for(i in 1:length(yTest)){
 xNew = matrix(X_Test[i,],ncol = 1)
 Xx = X%*%xNew
 sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
-      
+
 predMF[i] = as.double(pnorm(t(xNew)%*%paramsMF$meanBeta/sd))}
 
 timeMF_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
@@ -136,7 +136,7 @@ startTime = Sys.time()
 predSUN = double(length = length(yTest))
 for(i in 1:length(yTest)){
 xNew = matrix(X_Test[i,],ncol = 1)
-      
+
 predSUN[i] = mean(pnorm(t(xNew)%*%betaSUN))}
 
 timeSUN_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
@@ -157,7 +157,7 @@ paramsMF$nIter
 ```
 The **CAVI** for **PFM-VB** converges in 7 iterations, whereas that for  **MF-VB** requires 212 iterations.
 
-**Remark**: Depending on the machine, the running times can slightly differ from those reported in the paper, but they should not significantly deviate from them. 
+**Remark**: Depending on the machine, the running times can slightly differ from those reported in the paper, but they should not significantly deviate from them.
 
 Summaries of the results
 ========================
@@ -179,7 +179,7 @@ save(predProb, file="predProb.RData")
 Wasserstein distances
 ---------------------
 
-Let us now compute the **Wasserstein distances** between the *p* = 9036 approximate marginal densities provided by the two VB methods and the exact posterior marginals. These distances are computed via Monte-Carlo methods based on 20000 i.i.d. samples from the approximate and exact marginals. 
+Let us now compute the **Wasserstein distances** between the *p* = 9036 approximate marginal densities provided by the two VB methods and the exact posterior marginals. These distances are computed via Monte-Carlo methods based on 20000 i.i.d. samples from the approximate and exact marginals.
 
 
 Sampling from the optimal **PFM-VB** approximating density is performed through the function `sampleSUN_PFM`, while samples from the optimal **MF-VB** approximating Gaussian posterior distribution are obtained in a standard way, by exploiting the Choleski decomposition of the optimal covariance matrix **V**. **Note** that, `sampleSUN_PFM` produces samples from the joint approximate density and, hence, requires more computational time relative to sampling from the marginals (see the discussion in the article). Although the latter strategy would have been sufficient to compute the **Wasserstein distances**, we still consider `sampleSUN_PFM` to show an implementation of **Algorithm 3** in the article.
@@ -241,7 +241,7 @@ wassComparison = double(length = p)
 for(i in 1:p) {
     wassComparison[i] = wasserstein1d(a = betaSUN[i,], b = betaSUNcomparison[i,], p = 1)}
 ```
-   
+
 All the Wasserstein distances are then saved.
 
 ``` r
@@ -275,8 +275,9 @@ library(ggplot2)
 library(reshape)
 library(RColorBrewer)
 ```
-  
-The code to reproduce each of the Figures in the paper is reported in the following sub-sections. The three Figures can be found in the folder [`img`](https://github.com/augustofasano/Probit-PFMVB/tree/master/img). 
+
+The code to reproduce each of the Figures 1 to 3 in the paper is reported in the following sub-sections, together with the necessary steps to reproduce Figure 4.
+ The four Figures can be found in the folder [`img`](https://github.com/augustofasano/Probit-PFMVB/tree/master/img).
 
 Figure 1: log-Wasserstein distances comparison
 ----------------------------------------------
@@ -375,3 +376,12 @@ F3 = ggplot(data_points, aes(y=value, x=y,color=X2)) +geom_point(aes(shape=X2),a
 
 ggsave("F3.png",width=8,height=3)
 ```
+
+Figure 4: comparison of moments and predictive probabilities for different scenarios
+------------------------------------------------------------
+
+**Figure 4** shows the same quantities reported in Figure 3, for two different scenarios where *ν*<sub>*p*</sub><sup>2</sup> is allowed to vary with *p*, specifically *ν*<sub>*p*</sub><sup>2</sup>*=25x100/p* and *ν*<sub>*p*</sub><sup>2</sup>*=25x10/p*.
+
+In order to study such scenarios and obtain each of the two subfigures of Figure 4, it is sufficient to appropriately set *ν*<sub>*p*</sub><sup>2</sup> to the desired new value at the beginning and then rerun all the code up to the *Moments* Section, excluding the Section *Wasserstein distances*.
+
+Finally, after loading the needed plotting packages, the code used before to produce Figure 3 will now output the subfigure of Figure 4 corresponding to the considered scenario.
