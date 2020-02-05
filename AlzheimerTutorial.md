@@ -377,11 +377,11 @@ F3 = ggplot(data_points, aes(y=value, x=y,color=X2)) +geom_point(aes(shape=X2),a
 ggsave("F3.png",width=8,height=3)
 ```
 
-Figure 4: comparison of moments and predictive probabilities for different scenarios
+Figure 4: comparison of moments and predictive probabilities for different *ν*<sub>*p*</sub><sup>2</sup>
 ------------------------------------------------------------
 
-**Figure 4** shows the same quantities reported in Figure 3, for two different scenarios where *ν*<sub>*p*</sub><sup>2</sup> is allowed to vary with *p*, specifically *ν*<sub>*p*</sub><sup>2</sup>*=25x100/p* and *ν*<sub>*p*</sub><sup>2</sup>*=25x10/p*.
+**Figure 4** shows the same quantities reported in Figure 3, for two different scenarios where *ν*<sub>*p*</sub><sup>2</sup> is allowed to vary with *p*, specifically *ν*<sub>*p*</sub><sup>2</sup>*=2500/p* and *ν*<sub>*p*</sub><sup>2</sup>*=250/p*.
 
-In order to study such scenarios and obtain each of the two subfigures of Figure 4, it is sufficient to appropriately set *ν*<sub>*p*</sub><sup>2</sup> to the desired new value at the beginning and then rerun all the code up to the *Moments* Section, excluding the Section *Wasserstein distances*.
+In order to study such scenarios and obtain Figure 4, it is sufficient to appropriately set *ν*<sub>*p*</sub><sup>2</sup> to the desired value at the beginning and then rerun all the code up to the *Moments* Section, excluding the Section *Wasserstein distances*.
 
-Finally, after loading the needed plotting packages, the code used before to produce Figure 3 will now output the subfigure of Figure 4 corresponding to the considered scenario.
+Finally, after loading the required packages, the code used to produce Figure 3 will now output the sub-figures of **Figure 4** corresponding to the considered scenario.
