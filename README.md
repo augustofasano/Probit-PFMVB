@@ -1,6 +1,6 @@
 # Asymptotically Exact VB for Binary Regression
 
-This repository is associated with the article [Fasano, Durante and Zanella (2019). *Asymptotically Exact Variational Bayes for High-Dimensional Binary Regression Models*](https://). The **key contribution of the paper is outlined below**.
+This repository is associated with the article [Fasano, Durante and Zanella (2019). *Scalable and Accurate Variational Bayes for High-Dimensional Binary Regression Models*](https://). The **key contribution of the paper is outlined below**.
 
 > In this article we propose a novel variational approximation for the posterior distribution of the coefficients in a probit regression with Gaussian priors. Our method leverages a representation with global and local variables but, unlike for classical mean-field assumptions, we crucially avoid a fully factorized approximation, and instead rely on a variational family in which only the joint density of the local variables is factorized.
 
