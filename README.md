@@ -1,4 +1,4 @@
-# Asymptotically Exact VB for Binary Regression
+# Scalable and Accurate VB for Binary Regression
 
 This repository is associated with the article [Fasano, Durante and Zanella (2020). *Scalable and Accurate Variational Bayes for High-Dimensional Binary Regression Models*](https://). The **key contribution of the paper is outlined below**.
 
