@@ -35,7 +35,7 @@ This function implements the **CAVI** to obtain the optimal PFM approximating de
 For ease of reading, call
 **Ω**<sub>*z*</sub> = **I**<sub>*n*</sub> + *ν*<sup>2</sup>**X** **X**<sup>⊺</sup>.
 Notice that
-*p*(**z**, **y**) = *p*(**z**)p(**y**|**z**) = *ϕ*<sub>*n*</sub>( **0**; **Ω**<sub>*z*</sub>)∏<sub>*i* = 1, …, *n*</sub> **1**\[z\_i > 0\], thus
+*p*(**z**, **y**) = *p*(**z**)p(**y**|**z**) = *ϕ*<sub>*n*</sub>( **0**; **Ω**<sub>*z*</sub>)∏<sub>*i* = 1, …, *n*</sub> **1**\[*z*<sub>*i*</sub> > 0\], thus
 
 ELBO\[*q*<sub>PFM</sub>(**z**)\] = C -
 0.5∑<sub>*i* = 1, …, *n*</sub>\[(**Ω**<sub>*z*</sub><sup> − 1</sup>)<sub>*ii*</sub>*E*\[*z*<sub>*i*</sub><sup>2</sup>\] - *σ*<sub>*i*</sub><sup> \* − 2</sup>*E*\[*z*<sub>*i*</sub><sup>2</sup>\] + 2*z̄*<sub>*i*</sub><sup>(*t*)</sup>*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup> \* 2</sup> - (*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup>\*</sup>)<sup>2</sup> - 2log (*Φ*((2*y*<sub>*i*</sub> − 1)*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup>\*</sup>))\] - ∑<sub>*i>j*</sub>(**Ω**<sub>*z*</sub><sup> − 1</sup>)<sub>*ij*</sub>*z̄*<sub>*i*</sub><sup>(*t*)</sup>*z̄*<sub>*j*</sub><sup>(*t*)</sup>,
