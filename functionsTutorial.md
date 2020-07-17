@@ -1,4 +1,3 @@
-*ϕ**
 Introduction
 ============
 As described in the [`README.md`](https://github.com/augustofasano/Probit-PFMVB/blob/master/README.md) file, this tutorial provides details on the **functions required to implement the methods presented in Section 2 of the paper**. The `R` source file can be found in [`functionsVariational.R`](https://github.com/augustofasano/Probit-PFMVB/blob/master/functionsVariational.R).
