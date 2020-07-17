@@ -19,7 +19,7 @@ This function implements the **CAVI** to obtain the optimal PFM approximating de
 
 -   `X`: *n* × *p* matrix of explanatory variables
 -   `y`: binary vector of response variables
--   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sub>*p*</sub><sup>2</sup> in the paper)
 -   `moments`: logical, do you want to obtain marginal moments in the output?
 -   `tolerance`: absolute change in the ELBO\[*q*<sub>PFM</sub>(**z**)\] used to establish convergence
 -   `maxIter`: maximum number of allowed iterations before stopping
@@ -33,7 +33,7 @@ This function implements the **CAVI** to obtain the optimal PFM approximating de
 
 **Remark**: The ELBO\[*q*<sub>PFM</sub>(**z**)\] = ELBO\[*q*<sub>PFM</sub>(**β**,**z**)\] expression is reported below.
 For ease of reading, call
-**Ω**<sub>*z*</sub> = **I**<sub>*n*</sub> + *ν*<sup>2</sup>**X** **X**<sup>⊺</sup>.
+**Ω**<sub>*z*</sub> = **I**<sub>*n*</sub> + *ν*<sub>*p*</sub><sup>2</sup>**X** **X**<sup>⊺</sup>.
 Notice that
 *p*(**z**, **y**) = *p*(**z**)p(**y**|**z**) = *ϕ*<sub>*n*</sub>( **0**; **Ω**<sub>*z*</sub>)∏<sub>*i* = 1, …, *n*</sub> **1**\[*z*<sub>*i*</sub> > 0\], thus
 
@@ -171,7 +171,7 @@ This function **samples from the optimal unified skew-normal PFM approximating d
 -   `paramsPFM`: output of the function `getParamsPFM`
 -   `X`: *n* × *p* matrix of explanatory variables
 -   `y`: binary vector of response variables
--   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sub>*p*</sub><sup>2</sup> in the paper)
 -   `nSample`: number of i.i.d. samples from *q*<sup>\*</sup><sub>PFM</sub>(**β**) to generate
 
 **Output**: A *p* × `nSample` matrix, where each column is a sample from *q*<sup>\*</sup><sub>PFM</sub>(**β**).
@@ -225,7 +225,7 @@ This function implements the **CAVI** to obtain the optimal MF approximating den
 
 -   `X`: *n* × *p* matrix of explanatory variables
 -   `y`: binary vector of response variables
--   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sub>*p*</sub><sup>2</sup> in the paper)
 -   `tolerance`: absolute change in the ELBO\[*q*<sub>MF</sub>(**β**, **z**)\] used to establish convergence
 -   `maxIter`: maximum number of allowed iterations before stopping
 
@@ -302,13 +302,13 @@ return(list(meanBeta = meanBeta, diagV = diagV, nIter = nIter))
 ### `rSUNpost`
 
 This function **samples from the exact unified skew-normal posterior distribution** *p*(**β** ∣ **y**), obtained by [Durante
-(2019)](https://doi.org/10.1093/biomet/asz034), under multivariate normal prior for **β** having the form *p*(**β**) = *ϕ*(**β**; *ν*<sup>2</sup>**I**<sub>*p*</sub>).
+(2019)](https://doi.org/10.1093/biomet/asz034), under multivariate normal prior for **β** having the form *p*(**β**) = *ϕ*(**β**; *ν*<sub>*p*</sub><sup>2</sup>**I**<sub>*p*</sub>).
 
 **Input**:
 
 -   `X`: *n* × *p* matrix of explanatory variables
 -   `y`: binary vector of response variables
--   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sup>2</sup> in the paper)
+-   `nu2`: prior variance for *β*<sub>*j*</sub>’s coefficients (*ν*<sub>*p*</sub><sup>2</sup> in the paper)
 -   `nSample`: number of i.i.d. samples from *p*(**β** ∣ **y**) to generate
 
 **Output**: A *p* × `nSample` matrix, where each column is a sample from *p*(**β** ∣ **y**)
