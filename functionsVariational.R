@@ -19,7 +19,7 @@ getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) 
     invOmZ = solve(diag(1,nrow=n,ncol=n)+nu2*XXt) # needed for ELBO
     H = nu2*XXt%*%invOmZ
   }
-
+  
   # compute optimal sigma2
   h = diag(diag(H))
   sigma2 = matrix(1/(1-diag(H)), ncol = 1)
@@ -33,10 +33,14 @@ getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) 
   coeffMean_Z2 = diagInvOmZ-1/sigma2
   
   # initialization of variables
-  meanZ = matrix(0,n,1)
   mean_Z2 = matrix(0,n,1)
   mu = matrix(0,n,1)
-  elbo = -1
+  
+  musiRatio = as.double(mu/sigma)
+  phiPhiRatio = exp(dnorm(musiRatio,log = T)-pnorm((2*y-1)*musiRatio,log.p = T))
+  meanZ = mu + (2*y-1)*sigma*phiPhiRatio
+  
+  elbo = -Inf
   diff = 1
   nIter=0
   
@@ -53,17 +57,17 @@ getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) 
       
       # compute first (needed for algorithm) and second (needed for ELBO) moments
       musiRatio = mu[i]/sigma[i]
-      phiPhiRatio = dnorm(musiRatio)/pnorm((2*y[i]-1)*musiRatio)
+      phiPhiRatio = exp(dnorm(musiRatio, log = T) - pnorm((2*y[i]-1)*musiRatio, log.p = T))
       meanZ[i] = mu[i] + (2*y[i]-1)*sigma[i]*phiPhiRatio
       mean_Z2[i] = mu[i]^2+sigma2[i]+(2*y[i]-1)*mu[i]*sigma[i]*phiPhiRatio # needed for ELBO
-      sumLogPhi = sumLogPhi + log(pnorm((2*y[i]-1)*musiRatio))
+      sumLogPhi = sumLogPhi + pnorm((2*y[i]-1)*musiRatio, log.p = T)
     }
     
     # computation of ELBO (up to an additive constant not depending on mu)
     elbo = -(t(meanZ)%*%invOmZ%*%meanZ -
                sum((meanZ^2)*diagInvOmZ) +
                sum(mean_Z2*coeffMean_Z2))/2 -
-          sum(meanZ*mu/sigma2) + sum((mu^2)/sigma2)/2 + sumLogPhi
+      sum(meanZ*mu/sigma2) + sum((mu^2)/sigma2)/2 + sumLogPhi
     
     diff = abs(elbo-elboOld)
     nIter = nIter+1
@@ -92,7 +96,7 @@ getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) 
     }
     
     musiRatio = mu/sigma
-    phiPhiRatio = dnorm(musiRatio)/pnorm((2*y-1)*musiRatio)
+    phiPhiRatio = exp(dnorm(musiRatio, log = T) - pnorm((2*y-1)*musiRatio, log.p = T))
     
     meanZ = mu + (2*y-1)*sigma*phiPhiRatio
     postVarZ = as.double(sigma2*(1-(2*y-1)*musiRatio*phiPhiRatio - phiPhiRatio^2))
@@ -159,7 +163,7 @@ getParamsMF = function(X,y,nu2, tolerance = 1e-2, maxIter = 1e4){
     Omega = diag(rep(nu2,p),p,p)
     invOmega = diag(rep(1/nu2,p),p,p)
     V = solve(t(X)%*%X+invOmega)
-    diagV =diag(V)
+    diagV = diag(V)
     VXt = V%*%t(X)
     H = X%*%V%*%t(X) # needed for ELBO
   } else{
@@ -169,7 +173,7 @@ getParamsMF = function(X,y,nu2, tolerance = 1e-2, maxIter = 1e4){
     XXt = X%*%t(X)
     H = nu2*XXt%*%solve(diag(1,nrow=n,ncol=n)+nu2*XXt) # needed for ELBO
   }
-
+  
   # other useful quantites
   XVVXt = t(VXt)%*%VXt # needed for ELBO
   signH = H
@@ -177,24 +181,23 @@ getParamsMF = function(X,y,nu2, tolerance = 1e-2, maxIter = 1e4){
   
   # initialization of variables
   meanZ = matrix(0,n,1)
-  lambda = matrix(0,n,1) #X%*%meanBeta
   diff = 1
-  elbo = -1
+  elbo = -Inf
   nIter=0
   
   ######################################################
   # CAVI ALGORITHM
   ######################################################
-
+  
   while(diff > tolerance & nIter < maxIter) {
     elboOld = elbo
     
     # update parameters
     mu = H%*%meanZ
-    meanZ = mu +(2*y-1)*dnorm(mu)/pnorm((2*y-1)*mu)
+    meanZ = mu +(2*y-1)*exp(dnorm(mu, log = T) - pnorm((2*y-1)*mu, log.p = T))
     
     # compute ELBO
-    elbo = (t(meanZ)%*%XVVXt%*%meanZ)/nu2 + sum(log(pnorm(signH%*%meanZ)))
+    elbo = (t(meanZ)%*%XVVXt%*%meanZ)/nu2 + sum(pnorm(signH%*%meanZ, log.p = T))
     
     # compute change in ELBO
     diff = abs(elbo-elboOld)
@@ -215,7 +218,7 @@ rSUNpost = function(X,y,nu2,nSample) {
   # get parameters useful for sampling
   Omega = diag(rep(nu2,p),p,p)
   invOmega = diag(rep(1/nu2,p),p,p)
-
+  
   signX = X
   signX[y==0,] = -X[y==0,]
   Gamma_post_unnormalized = diag(1,n,n)+(nu2*signX)%*%t(signX)
@@ -235,12 +238,7 @@ rSUNpost = function(X,y,nu2,nSample) {
   # sample the multivariate normal component
   sampleMultNorm = matrix(rnorm(nSample*p),p,nSample)
   
-  # sample the truncated multivariate normal component
-  if(n == 1) {
-    sampleTruncNorm = matrix(rtruncnorm(n = Nsample, a = -gamma_post, b = Inf, mean = 0, sd = 1), nrow = 1, ncol = nSample)
-  } else{
-    sampleTruncNorm = mvrandn(l = -gamma_post, u = rep(Inf,n), Sig = Gamma_post, n = nSample)
-  }
+  sampleTruncNorm = t(rtmvnorm(n = nSample, mu = rep(0,n), sigma = Gamma_post, lb = -gamma_post, u = rep(Inf,n)))
   
   # combine the multivariate normal and truncated normal components
   sampleSUN = L%*%sampleMultNorm+coefTruncNorm%*%sampleTruncNorm
