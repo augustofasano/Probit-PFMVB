@@ -1,6 +1,6 @@
 # Scalable and Accurate VB for Binary Regression
 
-This repository is associated with the article [Fasano, Durante and Zanella (2020). *Scalable and Accurate Variational Bayes for High-Dimensional Binary Regression Models*](https://). The **key contribution of the paper is outlined below**.
+This repository is associated with the article [Fasano, Durante and Zanella (2020). *Scalable and Accurate Variational Bayes for High-Dimensional Binary Regression Models*](https://arxiv.org/abs/1911.06743). The **key contribution of the paper is outlined below**.
 
 > In this article we develop a novel variational approximation for the posterior distribution of the coefficients in high-dimensional probit models with Gaussian priors. Our method leverages a representation with global and local variables but, unlike for classical mean-field assumptions, it avoids a fully factorized approximation, and instead assumes a factorization only for the local variables.
 
