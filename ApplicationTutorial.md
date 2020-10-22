@@ -399,7 +399,7 @@ The dataset has been pre-processed to have one row for each patient, combining i
 Moreover, columns having more than 95% of the observations equal to zero have been removed.
 The resulting dataset is available in the [`data`](https://github.com/augustofasano/Probit-PFMVB/tree/master/data) folder and is called `lesion.RData`.
 
-Preliminary operations
+Preliminary operations and summary of the results
 ======================
 
 Once the files `lesion.RData` and `functionsVariational.R` have been downloaded, set the working directory to the folder where they are located. Then, clean the workspace and load `lesion.RData` along with the source file `functionsVariational.R` and other useful packages.
