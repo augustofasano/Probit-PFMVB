@@ -11,7 +11,7 @@ The goal of the first part of the analysis (i.e. the Alzheimer's application) is
 
 The second part focuses instead on the comparison of the test deviances obtained with the PFM and MF approximations for the lesion study.
 
-The **functions to implement the above methods** can be found in the `R` source file [`functionsVariational.R`](https://github.com/augustofasano/Probit-PFMVB/blob/master/functionsVariational.R), and a **tutorial** explaining in detail the usage of these functions is available in the file [`functionsTutorial.md`](https://github.com/augustofasano/Probit-PFMVB/blob/master/functionsTutorial.md). Such a file contains also the expression of ELBO\[*q*<sub>PFM</sub>(**β**,**z**)\].
+The **functions to implement the above methods** can be found in the `R` source file [`functionsVariational.R`](https://github.com/augustofasano/Probit-PFMVB/blob/master/functionsVariational.R), and a **tutorial** explaining in detail the usage of these functions is available in the file [`functionsTutorial.md`](https://github.com/augustofasano/Probit-PFMVB/blob/master/functionsTutorial.md). 
 
 All the analyses are performed with a **MacBook Pro (OS Mojave, version 10.14.6, Processor 2.7 GHz Intel Core i5, RAM 8 GB)**, using an `R` version **3.6.1**.
 
