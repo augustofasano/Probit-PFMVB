@@ -31,25 +31,6 @@ This function implements the **CAVI** to obtain the optimal PFM approximating de
 -   `nIter`: number of iterations required by the **CAVI**, either because it converged or because the maximum number of iterations `maxIter` was reached
 -   (optional, if `moments` is set to TRUE) `postMoments`: list containing the posterior mean (`postMoments.meanBeta`) and marginal posterior variances (`postMoments.varBeta`) of **β**
 
-**Remark**: The ELBO\[*q*<sub>PFM</sub>(**z**)\] = ELBO\[*q*<sub>PFM</sub>(**β**,**z**)\] expression is reported below.
-For ease of reading, call
-**Ω**<sub>*z*</sub> = **I**<sub>*n*</sub> + *ν*<sub>*p*</sub><sup>2</sup>**X** **X**<sup>⊺</sup>.
-Notice that
-*p*(**z**, **y**) = *p*(**z**)p(**y**|**z**) = *ϕ*<sub>*n*</sub>( **0**; **Ω**<sub>*z*</sub>)∏<sub>*i* = 1, …, *n*</sub> **1**\[*z*<sub>*i*</sub> > 0\], thus
-
-ELBO\[*q*<sub>PFM</sub>(**z**)\] = C -
-0.5∑<sub>*i* = 1, …, *n*</sub>\[(**Ω**<sub>*z*</sub><sup> − 1</sup>)<sub>*ii*</sub>*E*\[*z*<sub>*i*</sub><sup>2</sup>\] - *σ*<sub>*i*</sub><sup> \* − 2</sup>*E*\[*z*<sub>*i*</sub><sup>2</sup>\] + 2*z̄*<sub>*i*</sub><sup>(*t*)</sup>*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup> \* 2</sup> - (*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup>\*</sup>)<sup>2</sup> - 2log (*Φ*((2*y*<sub>*i*</sub> − 1)*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup>\*</sup>))\] - ∑<sub>*i>j*</sub>(**Ω**<sub>*z*</sub><sup> − 1</sup>)<sub>*ij*</sub>*z̄*<sub>*i*</sub><sup>(*t*)</sup>*z̄*<sub>*j*</sub><sup>(*t*)</sup>,
-
-where *C* is a constant term and all the expectations are with respect
-to *q*<sub>*PFM*</sub><sup>(*t*)</sup>(**z**), so that
-
-*z̄*<sub>*i*</sub><sup>(*t*)</sup> = *E*\[*z*<sub>*i*</sub>\] = *μ*<sub>*i*</sub><sup>(*t*)</sup> +
-(2*y*<sub>*i*</sub> − 1)*σ*<sub>*i*</sub><sup>\*</sup> *ϕ*(*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup>\*</sup>) \[*Φ*((2*y*<sub>*i*</sub> − 1)*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup>\*</sup>) \]<sup> − 1</sup>,
-
-*E*\[*z*<sub>*i*</sub><sup>2</sup>\] = *μ*<sub>*i*</sub><sup>(*t*) 2</sup> + *σ*<sub>*i*</sub><sup>\* 2</sup> + (2*y*<sub>*i*</sub> − 1)*μ*<sub>*i*</sub><sup>(*t*)</sup>*σ*<sub>*i*</sub><sup>\*</sup>*ϕ*(*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup>\*</sup>) \[*Φ*((2*y*<sub>*i*</sub> − 1)*μ*<sub>*i*</sub><sup>(*t*)</sup>/*σ*<sub>*i*</sub><sup>\*</sup>) \]<sup> − 1</sup>.
-
-
-
 ``` r
 getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) {
   ######################################################
