@@ -394,8 +394,8 @@ The lesion application
 ==================
 
 In this section, we show how to **compute the deviances** reported in Table 2 for the lesion dataset.
-The original dataset is available at the [UCI website](https://archive.ics.uci.edu/ml/datasets/Gastrointestinal+Lesions+in+Regular+Colonoscopy).
-The data have been adjusted in order to have one observation for each patient, combining in one vector the measurments obtained with the two different lights, as suggested on the dataset website.
+The original dataset is available at the [UCI repository](https://archive.ics.uci.edu/ml/datasets/Gastrointestinal+Lesions+in+Regular+Colonoscopy).
+The dataset has been pre-processed to have one row for each patient, combining in one vector the measurments obtained with the two different lights, as suggested on the dataset website.
 Moreover, columns having more than 95% of the observations equal to zero have been removed.
 The resulting dataset is available in the [`data`](https://github.com/augustofasano/Probit-PFMVB/tree/master/data) folder and is called `lesion.RData`.
 
@@ -416,7 +416,7 @@ load("lesion.RData")
 ```
 
 The matrix of raw covariates `X_raw` and the vector of binary observations `y_data` are loaded.
-Now, we **get the number of observations** `n_dataset` and randomly **allocate them to 5 folds** to be used for cross-validation.
+Now, we **get the number of observations** `n_dataset` and **allocate them to 5 folds** to be used for cross-validation.
 
 ``` r
 n_dataset = length(y_data)
@@ -431,7 +431,7 @@ sel_vector = sample(sel_vector,length(sel_vector))
 At this point, we can **loop over the 5 folds**.
 At each iteration we take the observations allocated to the corresponding fold as test set and the remaining ones as training set.
 The observations in the training set are standardized to have mean 0 and standard deviation 0.5, and the same scaling transformation is applied to the test set.
-Then, the training set is used to get the approximate posterior distributions for the PFM and MF variational solutions. From these the **predictive probabilities** for the test observations are computed, as in the previous Alzheimer's application.
+Then, the training set is used to get the approximate posterior distributions under both **PFM-VB** and **MF-VB**. From these, the **predictive probabilities** for the test observations are computed, as in the previous Alzheimer's application.
 Finally, these predictive probabilities are used to **compute the deviances of the test observations**, for each fold.
 
 ``` r
