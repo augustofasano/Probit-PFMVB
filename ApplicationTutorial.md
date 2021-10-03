@@ -69,13 +69,13 @@ For comparison, we keep track of the **running time** of the algorithm to conver
 
 ``` r
 tolerance = 1e-3 # tolerance to establish ELBO convergence
-
-# get optimal parameters and moments
+# get optimal parameters and moments and predictive probabilities
 startTime = Sys.time()
 paramsPFM = getParamsPFM(X=X,y=y,nu2=nu2,moments=TRUE,tolerance=tolerance,maxIter=1e4)
 timeSUN_PFM_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 
-# get the predictive probabilities
+# predictive probabilities
+# obtain a sample from q^*(z) to be used for the predictive probabilities of PFM
 startTime = Sys.time()
 nSampleZ = 5e3
 muTN = paramsPFM$mu
@@ -85,12 +85,12 @@ sampleTruncNorm[y==0,] = -sampleTruncNorm[y==0,] # need to adjust the sign of th
 
 predPFM = double(length = length(yTest))
 for(i in 1:length(yTest)){
-xNew = matrix(X_Test[i,],ncol = 1)
-Xx = X%*%xNew
-sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
+  xNew = matrix(X_Test[i,],ncol = 1)
+  Xx = X%*%xNew
+  sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
 
-predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))}
-
+  predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))
+}
 timeSUN_PFM_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 ```
 
@@ -104,20 +104,20 @@ Also this function outputs the **approximate posterior means and variances** of 
 As done before, the **running times** of the algorithm and of the inference part are monitored.
 
 ``` r
-# get optimal parameters and moments
 startTime = Sys.time()
 paramsMF = getParamsMF(X,y,nu2,tolerance,maxIter = 1e4)
 timeMF_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 
-# get the predictive probabilities
+# predictive probabilities
 startTime = Sys.time()
 predMF = double(length = length(yTest))
 for(i in 1:length(yTest)){
-xNew = matrix(X_Test[i,],ncol = 1)
-Xx = X%*%xNew
-sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
+  xNew = matrix(X_Test[i,],ncol = 1)
+  Xx = X%*%xNew
+  sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
 
-predMF[i] = as.double(pnorm(t(xNew)%*%paramsMF$meanBeta/sd))}
+  predMF[i] = as.double(pnorm(t(xNew)%*%paramsMF$meanBeta/sd))
+}
 
 timeMF_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 ```
@@ -135,14 +135,14 @@ startTime = Sys.time()
 betaSUN = rSUNpost(X=X,y=y,nu2=nu2,nSample=nSample)
 timeSUN_algo = difftime(Sys.time(), startTime, units=("mins"))[[1]]
 
-# get the predictive probabilities
+# predictive probabilities
 startTime = Sys.time()
 predSUN = double(length = length(yTest))
 for(i in 1:length(yTest)){
-xNew = matrix(X_Test[i,],ncol = 1)
+  xNew = matrix(X_Test[i,],ncol = 1)
 
-predSUN[i] = mean(pnorm(t(xNew)%*%betaSUN))}
-
+  predSUN[i] = mean(pnorm(t(xNew)%*%betaSUN))
+}
 timeSUN_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 ```
 
@@ -204,11 +204,13 @@ betaMF = apply(betaMF,2, function(x) paramsMF$meanBeta+x)
 
 wassMF = double(length = p)
 for(i in 1:p) {
-    wassMF[i] = wasserstein1d(a = betaSUN[i,], b = betaMF[i,], p = 1)}
+  wassMF[i] = wasserstein1d(a = betaSUN[i,], b = betaMF[i,], p = 1)
+}
 
 wassPFM = double(length = p)
 for(i in 1:p) {
-    wassPFM[i] = wasserstein1d(a = betaSUN[i,], b = betaSUN_PFM[i,], p = 1)}
+  wassPFM[i] = wasserstein1d(a = betaSUN[i,], b = betaSUN_PFM[i,], p = 1)
+}
 ```
 
 Now, we find the indexes of the parameters for which we have the **best and worst approximations**, for both **MF-VB** and **PFM-VB**. Then, we **save the samples obtained for these four parameters** when sampling from the exact posterior and
@@ -226,9 +228,9 @@ listBestWorst = list()
 indexList = c(bestWassMF,worstWassMF,bestWassPFM,worstWassPFM)
 count = 1
 for(i in indexList){
-listBestWorst[[count]]=cbind(SUN = betaSUN[i,],MF = betaMF[i,],PFM = betaSUN_PFM[i,])
-count = count+1}
-
+  listBestWorst[[count]]=cbind(SUN = betaSUN[i,],MF = betaMF[i,],PFM = betaSUN_PFM[i,])
+  count = count+1
+}
 names(listBestWorst) = c("bestMF","worstMF","bestPFM","worstPFM")
 
 save(listBestWorst, file = "BestWorstScenarios.RData")
@@ -243,12 +245,9 @@ betaSUNcomparison = rSUNpost(X,y,nu2,nSample = nSample)
 
 wassComparison = double(length = p)
 for(i in 1:p) {
-    wassComparison[i] = wasserstein1d(a = betaSUN[i,], b = betaSUNcomparison[i,], p = 1)}
-```
+  wassComparison[i] = wasserstein1d(a = betaSUN[i,], b = betaSUNcomparison[i,], p = 1)
+}
 
-All the Wasserstein distances are then saved.
-
-``` r
 # save Wasserstein distances
 wass = cbind("MF-VB"=wassMF,"PFM-VB"=wassPFM,"MonteCarloError"=wassComparison)
 save(wass, nSample, file="wassersteinDistances.RData") # save also number of samples used to get such distances
@@ -280,17 +279,82 @@ library(reshape)
 library(RColorBrewer)
 ```
 
-The code to reproduce each of the Figures 3 to 5 in the paper is reported in the following sub-sections, together with the necessary steps to reproduce Figure 6.
+The code to reproduce each of the Figures 2, S2 and S3 in the paper is reported in the following sub-sections, together with the necessary steps to reproduce Figure 3 and S4.
  The four Figures can be found in the folder [`img`](https://github.com/augustofasano/Probit-PFMVB/tree/master/img).
 
-Figure 3: log-Wasserstein distances comparison
+Figure 2: comparison of moments and predictive probabilities
+------------------------------------------------------------
+
+The following code reproduces **Figure 2**.
+
+``` r
+load("moments.RData")
+load("predProb.RData")
+
+means = as.matrix(moments[,c(3,5)])
+colnames(means) = c("MF","PFM")
+meanData = melt(means)[,-1]
+meanData$group1 = c("Expectations")
+meanData$y = c(moments[,1],moments[,1])
+
+variances = as.matrix(sqrt(moments[,c(4,6)]))
+colnames(variances) = c("MF","PFM")
+varData = melt(variances)[,-1]
+varData$group1 = c("Standard Deviations")
+varData$y = c(sqrt(moments[,2]),sqrt(moments[,2]))
+
+pred = as.matrix(predProb[,c(2,3)])
+colnames(pred) = c("MF","PFM")
+predData = melt(pred)[,-1]
+predData$group1 = c("Predictive Probabilities")
+predData$y = c(predProb[,1],predProb[,1])
+
+data_points = rbind(meanData,varData,predData)
+data_points$group1 = factor(data_points$group1, levels=c("Expectations", "Standard Deviations","Predictive Probabilities" ))
+F2 = ggplot(data_points, aes(y=value, x=y,color=X2)) +
+  geom_point(aes(shape=X2),alpha=0.7)+facet_wrap(group1~., scales="free")+
+  geom_abline(slope = 1, intercept = 0, alpha = 0.7, lty = 2)+theme_bw()+
+  labs(x="Quantities computed from the exact posterior", y = "Quantities computed from the approximate posterior")+
+  theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),plot.margin = margin(0.1, 0.1, 0.05, 0.2, "cm"),legend.position = "none")+
+  scale_color_manual(values=c("#BDBDBD","#525252"))+
+  scale_shape_manual(values=c(1, 2))
+
+ggsave("F2.png",width=8,height=3)
+```
+
+Figures 3 and S4: comparison of moments and predictive probabilities for different *ν*<sub>*p*</sub><sup>2</sup>
+------------------------------------------------------------
+
+**Figures 3 and S4** show the same quantities reported in Figure 2, for two different scenarios where *ν*<sub>*p*</sub><sup>2</sup> is allowed to vary with *p*, respectively *ν*<sub>*p*</sub><sup>2</sup>*=2500/p* and *ν*<sub>*p*</sub><sup>2</sup>*=250/p*.
+
+In order to study such scenarios and obtain Figure 3 or S4, it is sufficient to appropriately set *ν*<sub>*p*</sub><sup>2</sup> to the desired value at the beginning and then rerun all the code up to the *Moments* Section, excluding the Section *Wasserstein distances*.
+
+Finally, after loading the required packages, the code used to produce Figure 2 will now output the figure corresponding to the considered scenario.
+
+Figure S2: log-Wasserstein distances comparison
 ----------------------------------------------
 
-The following code reproduces **Figure 3**.
+The following code reproduces **Figure S2**. As preliminary step, it also checks the percentage of Wasserstein distances for each of the variational methods which lay within the 2.5%
+and 97.5% of the Wasserstein distances between the two different samples of 20000 draws from the same exact posterior marginals quantiles, allowing in principle to assess how the observed variability compares with Monte Carlo error.
 
 ``` r
 load("wassersteinDistances.RData")
 head(wass)
+
+# compare variational Wasserstein distances with Monte Carlo error
+up = quantile(wass[,3],probs=0.975)
+low = quantile(wass[,3],probs=0.025)
+
+# percentage of PFM wasserstein distances falling into the Monte Carlo error bounds
+sum(wass[,2]>low & wass[,2]<up)/dim(wass)[1]*100
+# [1] 94.22311
+
+# percentage of MF wasserstein distances falling into the Monte Carlo error bounds
+sum(wass[,1]>low & wass[,1]<up)/dim(wass)[1]*100
+# [1] 15.94732
+
+# plot histograms Figure S2
+
 errorM = log(wass[,3])
 wass = wass[,-3]
 
@@ -301,15 +365,15 @@ data_hist = melt(wass)[,-1]
 head(data_hist)
 myColors = c(RColorBrewer::brewer.pal(9, "Greys")[3],RColorBrewer::brewer.pal(9, "Greys")[6])
 
-F3 = ggplot(data_hist, aes(x=log(value))) + geom_histogram(position="identity", alpha=0.5,bins=30,fill=myColors[1],color=myColors[2])+ theme_bw()+facet_grid(.~X2)+labs(x="Logarithm of the Wasserstein distance from the exact posterior", y = "")+theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),plot.margin = margin(0.1, 0.1, 0.1, -0.3, "cm"))+geom_vline(aes(xintercept=c(up)), lty = 2)+geom_vline(aes(xintercept=c(low)), lty = 2)
+FS2 = ggplot(data_hist, aes(x=log(value))) + geom_histogram(position="identity", alpha=0.5,bins=30,fill=myColors[1],color=myColors[2])+ theme_bw()+facet_grid(.~X2)+labs(x="Logarithm of the Wasserstein distance from the exact posterior", y = "")+theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),plot.margin = margin(0.1, 0.1, 0.1, -0.3, "cm"))+geom_vline(aes(xintercept=c(up)), lty = 2)+geom_vline(aes(xintercept=c(low)), lty = 2)
 
-ggsave("F3.png",width=7,height=3)
+ggsave("FS2.png",width=7,height=3)
 ```
 
-Figure 4: Best and worst case scenarios of each approximate method
+Figure S3: Best and worst case scenarios of each approximate method
 ---------------------------------------------------------------------------------------
 
-The following code reproduces **Figure 4**.
+The following code reproduces **Figure S3**.
 
 ``` r
 load("BestWorstScenarios.RData")
@@ -341,68 +405,22 @@ worstPMF$group3 = c(rep(0.5,nSample),rep(0,2*nSample))
 dataDensity = rbind(bestMF,worstMF,bestPMF,worstPMF)
 dataDensity$X2 = factor(dataDensity$X2,levels=c("SUN","MF","PFM"))
 
-F4 = ggplot(dataDensity, aes(x=value,fill=X2,color=X2,linetype=X2))+geom_density(alpha=0.1)+facet_grid(group2~group1)+ theme_bw()+scale_fill_manual(values=c("#000000","#FFFFFF","#FFFFFF"))+scale_color_manual(values=c("#D9D9D9","#000000","#000000"))+scale_linetype_manual(values=c("solid","dotted","longdash"))+labs(x="", y = "")+theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),plot.margin = margin(0.1, 0.1, -0.15, -0.3, "cm"),legend.position = "none")+xlim(-30,30)
+FS3 = ggplot(dataDensity, aes(x=value,fill=X2,color=X2,linetype=X2))+geom_density(alpha=0.1)+facet_grid(group2~group1)+ theme_bw()+scale_fill_manual(values=c("#000000","#FFFFFF","#FFFFFF"))+scale_color_manual(values=c("#D9D9D9","#000000","#000000"))+scale_linetype_manual(values=c("solid","dotted","longdash"))+labs(x="", y = "")+theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),plot.margin = margin(0.1, 0.1, -0.15, -0.3, "cm"),legend.position = "none")+xlim(-30,30)
 
-ggsave("F4.png",width=7,height=4)
+ggsave("FS3.png",width=7,height=4)
 ```
 
-Figure 5: comparison of moments and predictive probabilities
-------------------------------------------------------------
+Deviances with five-fold cross-validation
+------------------------------
 
-The following code reproduces **Figure 5**.
+In this section, we show how to **compute the deviances** reported in Table 2 for the Alzheimer dataset.
 
-``` r
-load("moments.RData")
-load("predProb.RData")
+Preliminary operations
+------------------------------
 
-means = as.matrix(moments[,c(3,5)])
-colnames(means) = c("MF","PFM")
-meanData = melt(means)[,-1]
-meanData$group1 = c("Expectations")
-meanData$y = c(moments[,1],moments[,1])
+Once the files `Alzheimer_Interactions.RData` and `functionsVariational.R` have been downloaded, set the working directory to the folder where they are located. Then, clean the workspace and load `Alzheimer_Interactions.RData` along with the source file `functionsVariational.R` and other useful packages.
 
-variances = as.matrix(sqrt(moments[,c(4,6)]))
-colnames(variances) = c("MF","PFM")
-varData = melt(variances)[,-1]
-varData$group1 = c("Standard Deviations")
-varData$y = c(sqrt(moments[,2]),sqrt(moments[,2]))
-
-pred = as.matrix(predProb[,c(2,3)])
-colnames(pred) = c("MF","PFM")
-predData = melt(pred)[,-1]
-predData$group1 = c("Predictive Probabilities")
-predData$y = c(predProb[,1],predProb[,1])
-
-data_points = rbind(meanData,varData,predData)
-data_points$group1 = factor(data_points$group1, levels=c("Expectations", "Standard Deviations","Predictive Probabilities"))
-
-F5 = ggplot(data_points, aes(y=value, x=y,color=X2)) +geom_point(aes(shape=X2),alpha=0.7)+facet_wrap(group1~., scales="free")+  geom_abline(slope = 1, intercept = 0, alpha = 0.7, lty = 2)+ theme_bw()+labs(x="Quantities computed from the exact posterior", y = "Quantities computed from the approximate posterior")+theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),plot.margin = margin(0.1, 0.1, 0.05, 0.2, "cm"),legend.position = "none")+scale_color_manual(values=c("#BDBDBD","#525252"))+scale_shape_manual(values=c(1, 2))
-
-ggsave("F5.png",width=8,height=3)
-```
-
-Figure 6: comparison of moments and predictive probabilities for different *ν*<sub>*p*</sub><sup>2</sup>
-------------------------------------------------------------
-
-**Figure 6** shows the same quantities reported in Figure 5, for two different scenarios where *ν*<sub>*p*</sub><sup>2</sup> is allowed to vary with *p*, specifically *ν*<sub>*p*</sub><sup>2</sup>*=2500/p* and *ν*<sub>*p*</sub><sup>2</sup>*=250/p*.
-
-In order to study such scenarios and obtain Figure 6, it is sufficient to appropriately set *ν*<sub>*p*</sub><sup>2</sup> to the desired value at the beginning and then rerun all the code up to the *Moments* Section, excluding the Section *Wasserstein distances*.
-
-Finally, after loading the required packages, the code used to produce Figure 5 will now output the sub-figures of **Figure 6** corresponding to the considered scenario.
-
-The lesion application
-==================
-
-In this section, we show how to **compute the deviances** reported in Table 2 for the lesion dataset.
-The original dataset is available at the [UCI repository](https://archive.ics.uci.edu/ml/datasets/Gastrointestinal+Lesions+in+Regular+Colonoscopy).
-The dataset has been pre-processed to have one row for each patient, combining in one vector the measurments obtained with the two different lights, as suggested on the dataset website.
-Moreover, columns having more than 95% of the observations equal to zero have been removed.
-The resulting dataset is available in the [`data`](https://github.com/augustofasano/Probit-PFMVB/tree/master/data) folder and is called `lesion.RData`.
-
-Preliminary operations and summary of the results
-======================
-
-Once the files `lesion.RData` and `functionsVariational.R` have been downloaded, set the working directory to the folder where they are located. Then, clean the workspace and load `lesion.RData` along with the source file `functionsVariational.R` and other useful packages.
+After such preliminary opeations, the observations are **allocated  to 5 folds** to be used for cross-validation.
 
 ``` r
 rm(list = ls())
@@ -412,13 +430,16 @@ source("functionsVariational.R")
 library("TruncatedNormal")
 library("truncnorm")
 library("transport")
-load("lesion.RData")
-```
+library("mvtnorm")
+library("sparsevb")
+load("Alzheimer_Interactions.RData")
 
-The matrix of raw covariates `X_raw` and the vector of binary observations `y_data` are loaded.
-Now, we **get the number of observations** `n_dataset` and **allocate them to 5 folds** to be used for cross-validation.
+p = dim(X)[2] # number of covariates
+nu2 = 25 # prior variance
 
-``` r
+X_raw = X[,-1]
+y_data = y
+
 n_dataset = length(y_data)
 
 # Indicators five fold CV
@@ -428,16 +449,23 @@ length(sel_vector)-n_dataset
 sel_vector = sample(sel_vector,length(sel_vector))
 ```
 
+Summary of the results
+------------------------------
+
 At this point, we can **loop over the 5 folds**.
 At each iteration we take the observations allocated to the corresponding fold as test set and the remaining ones as training set.
 The observations in the training set are standardized to have mean 0 and standard deviation 0.5, and the same scaling transformation is applied to the test set.
-Then, the training set is used to get the approximate posterior distributions under both **PFM-VB** and **MF-VB**. From these, the **predictive probabilities** for the test observations are computed, as in the previous Alzheimer's application.
+Then, the training set is used to get the approximate posterior distributions under **PFM-VB**, **MF-VB** and **SVB**. From these, the **predictive probabilities** for the test observations are computed.
 Finally, these predictive probabilities are used to **compute the deviances of the test observations**, for each fold.
 
 ``` r
-# Initialize the deviances vectors
 Dev_PFM = rep(0,5)
 Dev_MF = rep(0,5)
+Dev_SVB_gaussian = rep(0,5)
+
+
+seed = 1
+set.seed(seed)
 
 for (f in 1:5){
   sel_set = which(sel_vector!=f)
@@ -446,7 +474,7 @@ for (f in 1:5){
   X_data = X_raw
 
   for (j in 1:dim(X_data)[2]){
-  X_data[,j] = (X_data[,j]-mean(X_data[sel_set,j]))/(2*sd(X_data[sel_set,j]))
+    X_data[,j] = (X_data[,j]-mean(X_data[sel_set,j]))/(2*sd(X_data[sel_set,j]))
   }
   X_data = cbind(rep(1,dim(X_data)[1]),X_data)
 
@@ -459,17 +487,11 @@ for (f in 1:5){
   y_new = y_data[-sel_set]
   X_new = X_data[-sel_set,]
 
-  seed = 1
-  set.seed(seed)
   n = dim(X)[1] # training set size
 
   # split training and test sets
   X_Test = X_new
   yTest = y_new
-
-  p = dim(X)[2] # number of covariates
-  nu2 = 25 # prior variance
-  nSample = 2e4 # fix number of samples
 
   # precompute some useful quantities to be used for the predictive probabilities
   VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
@@ -477,7 +499,7 @@ for (f in 1:5){
 
   tolerance = 1e-3 # tolerance to establish ELBO convergence
 
-  # get optimal parameters and moments
+  # get optimal parameters and moments PFM
   startTime = Sys.time()
   paramsPFM = getParamsPFM(X=X,y=y,nu2=nu2,moments=TRUE,tolerance=tolerance,maxIter=1e4)
   timeSUN_PFM_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
@@ -492,17 +514,15 @@ for (f in 1:5){
 
   predPFM = double(length = length(yTest))
   for(i in 1:length(yTest)){
-  xNew = matrix(X_Test[i,],ncol = 1)
-  Xx = X%*%xNew
-  sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
+    xNew = matrix(X_Test[i,],ncol = 1)
+    Xx = X%*%xNew
+    sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
 
-  predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))}
+    predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))}
 
   timeSUN_PFM_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 
-
-
-  # get optimal parameters and moments
+  # get optimal parameters and moments MF
   startTime = Sys.time()
   paramsMF = getParamsMF(X,y,nu2,tolerance,maxIter = 1e4)
   timeMF_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
@@ -511,17 +531,45 @@ for (f in 1:5){
   startTime = Sys.time()
   predMF = double(length = length(yTest))
   for(i in 1:length(yTest)){
-  xNew = matrix(X_Test[i,],ncol = 1)
-  Xx = X%*%xNew
-  sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
+    xNew = matrix(X_Test[i,],ncol = 1)
+    Xx = X%*%xNew
+    sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
 
-  predMF[i] = as.double(pnorm(t(xNew)%*%paramsMF$meanBeta/sd))}
+    predMF[i] = as.double(pnorm(t(xNew)%*%paramsMF$meanBeta/sd))}
 
   timeMF_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
 
 
+  # get optimal parameters and moments SVB (intercept = TRUE)
+  startTime = Sys.time()
+  paramsSVB_gaussian = svb.fit(X = X[,-1],
+                               Y = y,
+                               family = "logistic",
+                               slab = "gaussian",
+                               sigma = rep(sqrt(nu2), p-1),
+                               prior_scale = sqrt(nu2),
+                               intercept = TRUE,
+                               max_iter = 1e4,
+                               tol = tolerance)
+  timeSVB_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+
+  # predictive probabilities
+  nSample = 5e3 # number of samples to compute predictive probabilities in LOGIT SVB, coherent with PFM
+  startTime = Sys.time()
+  sampleBetaSVB_gaussian = sampleSVB(paramsSVB_gaussian,nSample)
+  sampleBetaSVB_gaussian = rbind(rep(paramsSVB_gaussian$intercept,nSample),sampleBetaSVB_gaussian)
+  predSVB_gaussian = double(length = length(yTest))
+  for(i in 1:length(yTest)){
+    xNew = as.matrix(X_Test[i,])
+    linPred = t(xNew)%*%sampleBetaSVB_gaussian
+
+    predSVB_gaussian[i] = mean(plogis(linPred))
+  }
+  timeSVB_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+
   Dev_PFM[f] = c(-sum(log((predPFM^yTest)*((1-predPFM)^(1-yTest)))))
   Dev_MF[f] = c(-sum(log((predMF^yTest)*((1-predMF)^(1-yTest)))))
+  Dev_SVB_gaussian[f] = c(-sum(log((predSVB_gaussian^yTest)*((1-predSVB_gaussian)^(1-yTest)))))
 
   print(f)
 }
@@ -531,9 +579,193 @@ Summing the deviances obtained in the 5 folds we get the desired result.
 
 ``` r
 sum(Dev_PFM)
-#[1] 27.14162
+#[1] 187.5177
 sum(Dev_MF)
-#[1] 48.55411
-sum(Dev_PFM)/sum(Dev_MF)
-#[1] 0.5589974
+#[1] 228.7083
+sum(Dev_SVB_gaussian)
+#[1]  126.2379
+```
+
+The lesion application
+==================
+
+In this section, we show instead how to **compute the deviances** reported in Table 2 for the lesion dataset.
+The procedure is analogous to the one shown above for the Alzheimer dataset.
+The original dataset is available at the [UCI repository](https://archive.ics.uci.edu/ml/datasets/Gastrointestinal+Lesions+in+Regular+Colonoscopy).
+The dataset has been pre-processed to have one row for each patient, combining in one vector the measurements obtained with the two different lights, as suggested on the dataset website.
+Moreover, columns having more than 95% of the observations equal to zero have been removed.
+The resulting dataset is available in the [`data`](https://github.com/augustofasano/Probit-PFMVB/tree/master/data) folder and is called `lesion.RData`.
+
+Preliminary operations
+------------------------------
+
+Once the files `lesion.RData` and `functionsVariational.R` have been downloaded, set the working directory to the folder where they are located. Then, clean the workspace and load `lesion.RData` along with the source file `functionsVariational.R` and other useful packages.
+
+``` r
+rm(list = ls())
+library(gdata)
+library(arm)
+source("functionsVariational.R")
+library("TruncatedNormal")
+library("truncnorm")
+library("transport")
+library("mvtnorm")
+library("sparsevb")
+load("lesion.RData")
+```
+
+The matrix of raw covariates `X_raw` and the vector of binary observations `y_data` are loaded.
+Now, we **get the number of observations** `n_dataset` and **allocate them to 5 folds** to be used for cross-validation.
+
+``` r
+p = dim(X_raw)[2] + 1 # number of covariates (including intecept)
+nu2 = 25*100/p # prior variance
+
+n_dataset = length(y_data)
+
+# Indicators five fold CV
+set.seed(12)
+sel_vector = c(rep(1,round(n_dataset/5)),rep(2,round(n_dataset/5)),rep(3,round(n_dataset/5)),rep(4,round(n_dataset/5)),rep(5,n_dataset-round(n_dataset/5)*4))
+length(sel_vector)-n_dataset
+sel_vector = sample(sel_vector,length(sel_vector))
+```
+
+Summary of the results
+------------------------------
+
+At this point, we can **loop over the 5 folds**.
+At each iteration we take the observations allocated to the corresponding fold as test set and the remaining ones as training set.
+The observations in the training set are standardized to have mean 0 and standard deviation 0.5, and the same scaling transformation is applied to the test set.
+Then, the training set is used to get the approximate posterior distributions under both **PFM-VB**, **MF-VB** and **SVB**. From these, the **predictive probabilities** for the test observations are computed, as in the previous Alzheimer's application.
+Finally, these predictive probabilities are used to **compute the deviances of the test observations**, for each fold.
+
+``` r
+Dev_PFM = rep(0,5)
+Dev_MF = rep(0,5)
+Dev_SVB_gaussian = rep(0,5)
+
+seed = 1
+set.seed(seed)
+
+for (f in 1:5){
+  sel_set = which(sel_vector!=f)
+
+  # Rescale
+  X_data = X_raw
+
+  for (j in 1:dim(X_data)[2]){
+    X_data[,j] = (X_data[,j]-mean(X_data[sel_set,j]))/(2*sd(X_data[sel_set,j]))
+  }
+  X_data = cbind(rep(1,dim(X_data)[1]),X_data)
+
+
+  # Training data
+  y = y_data[sel_set]
+  X = X_data[sel_set,]
+
+  # Test data
+  y_new = y_data[-sel_set]
+  X_new = X_data[-sel_set,]
+
+  n = dim(X)[1] # training set size
+
+  # split training and test sets
+  X_Test = X_new
+  yTest = y_new
+
+  # precompute some useful quantities to be used for the predictive probabilities
+  VXt = t(nu2*X)%*%solve(diag(n)+(nu2*X)%*%t(X))
+  invIXXt = solve(diag(1,nrow=n,ncol=n)+nu2*(X%*%t(X)))
+
+  tolerance = 1e-3 # tolerance to establish ELBO convergence
+
+  # get optimal parameters and moments PFM
+  startTime = Sys.time()
+  paramsPFM = getParamsPFM(X=X,y=y,nu2=nu2,moments=TRUE,tolerance=tolerance,maxIter=1e4)
+  timeSUN_PFM_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+
+  # get the predictive probabilities
+  startTime = Sys.time()
+  nSampleZ = 5e3
+  muTN = paramsPFM$mu
+  muTN[y==0] = -muTN[y==0]
+  sampleTruncNorm = matrix(rtruncnorm(n*nSampleZ, a = 0, b = Inf, mean = muTN, sd = sqrt(paramsPFM$sigma2)), nrow = n, ncol = nSampleZ, byrow = F )
+  sampleTruncNorm[y==0,] = -sampleTruncNorm[y==0,] # need to adjust the sign of the variables for which y_i is 0
+
+  predPFM = double(length = length(yTest))
+  for(i in 1:length(yTest)){
+    xNew = matrix(X_Test[i,],ncol = 1)
+    Xx = X%*%xNew
+    sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
+
+    predPFM[i] = mean(pnorm((t(xNew)%*%VXt%*%sampleTruncNorm)/sd))}
+
+  timeSUN_PFM_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+
+
+
+  # get optimal parameters and moments MF
+  startTime = Sys.time()
+  paramsMF = getParamsMF(X,y,nu2,tolerance,maxIter = 1e4)
+  timeMF_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+
+  # get the predictive probabilities
+  startTime = Sys.time()
+  predMF = double(length = length(yTest))
+  for(i in 1:length(yTest)){
+    xNew = matrix(X_Test[i,],ncol = 1)
+    Xx = X%*%xNew
+    sd = as.double(sqrt(1+nu2*(sum(xNew^2)-nu2*t(Xx)%*%invIXXt%*%Xx)))
+
+    predMF[i] = as.double(pnorm(t(xNew)%*%paramsMF$meanBeta/sd))}
+
+  timeMF_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+
+
+
+  # get optimal parameters and moments SVB (intercept = TRUE)
+  startTime = Sys.time()
+  paramsSVB_gaussian = svb.fit(X = X[,-1],
+                               Y = y,
+                               family = "logistic",
+                               slab = "gaussian",
+                               sigma = rep(sqrt(nu2), p-1),
+                               prior_scale = sqrt(nu2),
+                               intercept = TRUE,
+                               max_iter = 1e4,
+                               tol = tolerance)
+  timeSVB_algo = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+
+  # predictive probabilities
+  nSample = 5e3 # number of samples to compute predictive probabilities in LOGIT SVB, coherent with PFM
+  startTime = Sys.time()
+  sampleBetaSVB_gaussian = sampleSVB(paramsSVB_gaussian,nSample)
+  sampleBetaSVB_gaussian = rbind(rep(paramsSVB_gaussian$intercept,nSample),sampleBetaSVB_gaussian)
+  predSVB_gaussian = double(length = length(yTest))
+  for(i in 1:length(yTest)){
+    xNew = as.matrix(X_Test[i,])
+    linPred = t(xNew)%*%sampleBetaSVB_gaussian
+
+    predSVB_gaussian[i] = mean(plogis(linPred))
+  }
+  timeSVB_inference = difftime(Sys.time(), startTime, units=("secs"))[[1]]
+
+
+  Dev_PFM[f] = c(-sum(log((predPFM^yTest)*((1-predPFM)^(1-yTest)))))
+  Dev_MF[f] = c(-sum(log((predMF^yTest)*((1-predMF)^(1-yTest)))))
+  Dev_SVB_gaussian[f] = c(-sum(log((predSVB_gaussian^yTest)*((1-predSVB_gaussian)^(1-yTest)))))
+
+  print(f)
+}
+```
+
+Summing the deviances obtained in the 5 folds we get the desired result.
+
+``` r
+sum(Dev_PFM)
+#[1] 27.24379
+sum(Dev_MF)
+#[1] 48.65794
+sum(Dev_SVB_gaussian)
+# [1] 35.80594
 ```
