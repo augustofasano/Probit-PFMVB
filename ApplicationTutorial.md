@@ -342,6 +342,12 @@ load("wassersteinDistances.RData")
 head(wass)
 
 # compare variational Wasserstein distances with Monte Carlo error
+colMeans(wass)
+
+# MF-VB           PFM-VB          MonteCarloError
+# 0.46660234      0.06611838      0.06387144
+
+# percentage of PFM wasserstein distances falling into the Monte Carlo error bounds
 up = quantile(wass[,3],probs=0.975)
 low = quantile(wass[,3],probs=0.025)
 
