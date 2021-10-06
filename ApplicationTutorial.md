@@ -8,7 +8,7 @@ For implementation purposes, execute the code below considering the same order i
 The Alzheimer's application
 =====================
 
-The code below shows how to **load the data** of the Alzheimer's study presented in Section 4 and explains in detail the `R` code to **implement the different methods for posterior inference** discussed in Section 2. Guidelines to **produce Figures 3 to 6 in the paper** are also provided.
+The code below shows how to **load the data** of the Alzheimer's study presented in Section 4 and explains in detail the `R` code to **implement the different methods for posterior inference** discussed in Section 2. Guidelines to **produce the figures in the paper** are also provided.
 
 As discussed in Section 4, the focus is to **model presence or absence of Alzheimer’s disease in its early stages as a function of demographic data, genotype and assay results**. The original dataset is available in the `R` library `AppliedPredictiveModeling` and arises from a study of the Washington University ([Craig-Schapiro et al., 2011](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0018850)).
 
@@ -214,7 +214,7 @@ for(i in 1:p) {
 ```
 
 Now, we find the indexes of the parameters for which we have the **best and worst approximations**, for both **MF-VB** and **PFM-VB**. Then, we **save the samples obtained for these four parameters** when sampling from the exact posterior and
-from the two approximate methods. These quantities are required to produce Figure 4.
+from the two approximate methods. These quantities are required to produce Figure S3.
 
 ``` r
 # find best/worst Wasserstein distance for MF and PFM
@@ -279,7 +279,7 @@ library(reshape)
 library(RColorBrewer)
 ```
 
-The code to reproduce each of the Figures 2, S2 and S3 in the paper is reported in the following sub-sections, together with the necessary steps to reproduce Figure 3 and S4.
+The code to reproduce Figures 2, S2 and S3 in the paper is reported in the following sub-sections, together with the necessary steps to reproduce Figure 3 and S4.
  The four Figures can be found in the folder [`img`](https://github.com/augustofasano/Probit-PFMVB/tree/master/img).
 
 Figure 2: comparison of moments and predictive probabilities
@@ -347,7 +347,7 @@ colMeans(wass)
 # MF-VB           PFM-VB          MonteCarloError
 # 0.46660234      0.06611838      0.06387144
 
-# percentage of PFM wasserstein distances falling into the Monte Carlo error bounds
+# Monte Carlo error bounds
 up = quantile(wass[,3],probs=0.975)
 low = quantile(wass[,3],probs=0.025)
 
