@@ -10,7 +10,7 @@ The **list of implemented functions** is reported below. Each of them is then an
 -   `sampleSUN_PFM`: samples from the optimal PFM approximating density (**Algorithm 3** in the paper)
 -   `getParamsMF`: returns the parameters of the optimal MF approximation (**Algorithm 1** in the paper)
 -   `rSUNpost`: samples from the exact **SUN** posterior distribution ([Durante, 2019](https://doi.org/10.1093/biomet/asz034))
--   `sampleSVB`: samples from the spike-and-slab variational approximation of the posterior distribution for logistic regression ([Ray et al., 2020](https://proceedings.neurips.cc/paper/2020/file/a5bad363fc47f424ddf5091c8471480a-Paper.pdf))
+-   `sampleSVB`: samples from the spike-and-slab variational approximation of the posterior for logistic regression ([Ray et al., 2020](https://proceedings.neurips.cc/paper/2020/file/a5bad363fc47f424ddf5091c8471480a-Paper.pdf))
 
 ### `getParamsPFM`
 
